@@ -50,6 +50,21 @@ services:
       timeout: 5s
       retries: 10
 
+  nginx:
+    image: nginx:stable
+    container_name: nginx
+    restart: unless-stopped
+    ports:
+      - "18080:80"
+    volumes:
+      - /Users/user/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /Users/user/docker/nginx/conf.d:/etc/nginx/conf.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider --quiet http://127.0.0.1/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
 volumes:
   postgres-data:
   redis-data:
