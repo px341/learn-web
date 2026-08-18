@@ -1,23 +1,1002 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, Navigate, NavLink, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { BookOpen, BrainCircuit, CheckCircle2, ChevronRight, CircleHelp, FileImage, Home, LogOut, Menu, Plus, Search, Sparkles, Upload, UserRound, WalletCards, X } from 'lucide-react'
-import { api } from './mock'
-import type { Mistake } from './types'
+import { useEffect, useMemo, useState } from "react";
+import {
+  Link,
+  Navigate,
+  NavLink,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from "react-router-dom";
+import {
+  BookOpen,
+  BrainCircuit,
+  CheckCircle2,
+  ChevronRight,
+  CircleHelp,
+  FileImage,
+  Home,
+  LogOut,
+  Menu,
+  Plus,
+  Search,
+  Sparkles,
+  Upload,
+  UserRound,
+  WalletCards,
+  X,
+} from "lucide-react";
+import { api } from "./mock";
+import type { Mistake } from "./types";
 
-function Logo() { return <Link to="/dashboard" className="logo"><span className="logo-mark"><BrainCircuit size={20}/></span><span>错题<span className="accent">实验室</span></span></Link> }
-function Auth({ register = false }: { register?: boolean }) { const nav = useNavigate(); const [email,setEmail]=useState('demo@mistake.lab'); return <main className="auth-shell"><div className="auth-art"><div className="art-orb orb-one"/><div className="art-orb orb-two"/><Logo/><div className="art-copy"><p className="eyebrow">AI-powered learning workspace</p><h1>让每一道错题，<br/><em>都变成进步。</em></h1><p>拍下错题，得到清晰的思路拆解，<br/>把“会做”变成真正的掌握。</p></div><div className="art-bottom"><span>✦ 你的智能错题本</span><span>已帮助 12,480+ 位同学</span></div></div><div className="auth-card"><div className="auth-mobile-logo"><Logo/></div><div className="auth-heading"><span className="icon-chip"><Sparkles size={17}/></span><p className="eyebrow">WELCOME BACK</p><h2>{register ? '创建你的学习空间' : '欢迎回来，同学'}</h2><p>{register ? '从今天开始，让错题不再重来。' : '继续记录今天的学习进步。'}</p></div><form onSubmit={e=>{e.preventDefault(); api.login(email); nav('/dashboard')}}><label>邮箱或手机号<input value={email} onChange={e=>setEmail(e.target.value)} placeholder="name@example.com" /></label><label>密码<input type="password" defaultValue="123456" placeholder="请输入密码" /></label>{register && <label>确认密码<input type="password" defaultValue="123456" /></label>}{!register && <div className="form-meta"><label className="check"><input type="checkbox" defaultChecked/> 记住我</label><a href="#">忘记密码？</a></div>}<button className="primary wide" type="submit">{register ? '创建账户' : '登录'} <ChevronRight size={17}/></button></form><div className="divider"><span>或者</span></div><button className="social" onClick={()=>{api.login('demo@mistake.lab');nav('/dashboard')}}>◉ <span>使用演示账号继续</span></button><p className="auth-switch">{register ? '已有账户？' : '还没有账户？'} <Link to={register ? '/login':'/register'}>{register ? '立即登录':'免费注册'}</Link></p><p className="demo-hint">演示版无需真实注册，点击上方按钮即可体验完整流程</p></div></main> }
+function Logo() {
+  return (
+    <Link to="/dashboard" className="logo">
+      <span className="logo-mark">
+        <BrainCircuit size={20} />
+      </span>
+      <span>
+        错题<span className="accent">实验室</span>
+      </span>
+    </Link>
+  );
+}
+function Auth({ register = false }: { register?: boolean }) {
+  const nav = useNavigate();
+  const [email, setEmail] = useState("demo@mistake.lab");
+  return (
+    <main className="auth-shell">
+      <div className="auth-art">
+        <div className="art-orb orb-one" />
+        <div className="art-orb orb-two" />
+        <Logo />
+        <div className="art-copy">
+          <p className="eyebrow">AI-powered learning workspace</p>
+          <h1>
+            让每一道错题，
+            <br />
+            <em>都变成进步。</em>
+          </h1>
+          <p>
+            拍下错题，得到清晰的思路拆解，
+            <br />
+            把“会做”变成真正的掌握。
+          </p>
+        </div>
+        <div className="art-bottom">
+          <span>✦ 你的智能错题本</span>
+          <span>已帮助 12,480+ 位同学</span>
+        </div>
+      </div>
+      <div className="auth-card">
+        <div className="auth-mobile-logo">
+          <Logo />
+        </div>
+        <div className="auth-heading">
+          <span className="icon-chip">
+            <Sparkles size={17} />
+          </span>
+          <p className="eyebrow">WELCOME BACK</p>
+          <h2>{register ? "创建你的学习空间" : "欢迎回来，同学"}</h2>
+          <p>
+            {register
+              ? "从今天开始，让错题不再重来。"
+              : "继续记录今天的学习进步。"}
+          </p>
+        </div>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            api.login(email);
+            nav("/dashboard");
+          }}
+        >
+          <label>
+            邮箱或手机号
+            <input
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+            />
+          </label>
+          <label>
+            密码
+            <input
+              type="password"
+              defaultValue="123456"
+              placeholder="请输入密码"
+            />
+          </label>
+          {register && (
+            <label>
+              确认密码
+              <input type="password" defaultValue="123456" />
+            </label>
+          )}
+          {!register && (
+            <div className="form-meta">
+              <label className="check">
+                <input type="checkbox" defaultChecked /> 记住我
+              </label>
+              <a href="#">忘记密码？</a>
+            </div>
+          )}
+          <button className="primary wide" type="submit">
+            {register ? "创建账户" : "登录"} <ChevronRight size={17} />
+          </button>
+        </form>
+        <div className="divider">
+          <span>或者</span>
+        </div>
+        <button
+          className="social"
+          onClick={() => {
+            api.login("demo@mistake.lab");
+            nav("/dashboard");
+          }}
+        >
+          ◉ <span>使用演示账号继续</span>
+        </button>
+        <p className="auth-switch">
+          {register ? "已有账户？" : "还没有账户？"}{" "}
+          <Link to={register ? "/login" : "/register"}>
+            {register ? "立即登录" : "免费注册"}
+          </Link>
+        </p>
+        <p className="demo-hint">
+          演示版无需真实注册，点击上方按钮即可体验完整流程
+        </p>
+      </div>
+    </main>
+  );
+}
 
-function Layout({ children }: { children: React.ReactNode }) { const [open,setOpen]=useState(false); const loc=useLocation(); const user=api.getState().user; const items=[['/dashboard','总览',Home],['/mistakes','我的错题',BookOpen],['/mistakes/upload','上传错题',Upload]] as const; return <div className="app-shell"><aside className={open?'sidebar open':'sidebar'}><div className="side-top"><Logo/><button className="icon-button mobile-only" onClick={()=>setOpen(false)}><X size={20}/></button></div><nav>{items.map(([to,label,Icon])=><NavLink key={to} to={to} onClick={()=>setOpen(false)} className={({isActive})=>`nav-item ${isActive || (to==='/mistakes'&&loc.pathname.startsWith('/mistakes/'))?'active':''}`}><Icon size={18}/><span>{label}</span></NavLink>)}</nav><div className="side-help"><CircleHelp size={18}/><div><strong>需要帮助？</strong><small>查看使用指南</small></div><ChevronRight size={15}/></div><div className="side-user"><div className="avatar">{user?.name?.[0]?.toUpperCase() || 'D'}</div><div className="user-copy"><strong>{user?.name || '演示同学'}</strong><small>{user?.email || 'demo@mistake.lab'}</small></div><button className="ghost icon-button" onClick={()=>{api.logout();window.location.href='/login'}}><LogOut size={16}/></button></div></aside>{open&&<div className="backdrop" onClick={()=>setOpen(false)}/>}<section className="main-area"><header className="topbar"><button className="icon-button mobile-only" onClick={()=>setOpen(true)}><Menu size={21}/></button><div className="breadcrumb">学习空间 <ChevronRight size={14}/> <span>{loc.pathname.includes('upload')?'上传错题':loc.pathname.includes('mistakes')?'我的错题':'总览'}</span></div><div className="top-actions"><div className="credit-pill"><WalletCards size={16}/><span>剩余分析次数</span><b>{user?.credits ?? 0}</b></div><Link className="avatar" to="/profile">{user?.name?.[0]?.toUpperCase() || 'D'}</Link></div></header><div className="content">{children}</div></section></div> }
-function Guard({children}:{children:React.ReactNode}) { return api.getState().user ? <Layout>{children}</Layout> : <Navigate to="/login" replace/> }
-function PageTitle({ eyebrow, title, action }: { eyebrow?: string; title: string; action?: React.ReactNode }) { return <div className="page-title"><div><p className="eyebrow">{eyebrow}</p><h1>{title}</h1></div>{action}</div> }
-function Dashboard() { const [tick,setTick]=useState(0); useEffect(()=>{const f=()=>setTick(x=>x+1);window.addEventListener('mock-update',f);return()=>window.removeEventListener('mock-update',f)},[]); const mistakes=api.listMistakes(); const completed=mistakes.filter(m=>m.status==='completed'); const types=useMemo(()=>Object.entries(mistakes.reduce<Record<string,number>>((a,m)=>(a[m.type]=(a[m.type]||0)+1,a),{})),[mistakes,tick]); return <><PageTitle eyebrow="MONDAY, 18 AUGUST 2026" title="早上好，{api.getState().user?.name || '同学'} 👋" action={<Link to="/mistakes/upload" className="primary"><Plus size={17}/> 上传新错题</Link>}/><div className="welcome-card"><div><span className="tag tag-purple"><Sparkles size={13}/> 学习小贴士</span><h2>今天也要保持好奇心。</h2><p>复习 2 道“概念不清”的错题，巩固你的函数基础。</p><Link to="/mistakes" className="text-link">开始复习 <ChevronRight size={15}/></Link></div><div className="welcome-illustration"><div className="float-card card-a">x² + 2x + 1</div><div className="float-card card-b">✓ 已掌握</div><div className="book-shape"><BookOpen size={47}/></div></div></div><div className="stats-grid"><Stat label="累计错题" value={mistakes.length} unit="道" change="较上周 +12%" positive/><Stat label="本周新增" value={mistakes.filter(m=>m.createdAt.includes('今天')||m.createdAt.includes('昨天')).length} unit="道" change="保持得很好" positive/><Stat label="平均正确率" value="72" unit="%" change="较上周 +8%" positive/><Stat label="待复习" value={mistakes.filter(m=>m.status!=='completed').length+2} unit="道" change="需要关注"/> </div><div className="dashboard-grid"><section className="panel chart-panel"><div className="panel-head"><div><h3>正确率趋势</h3><p>过去 7 天的答题表现</p></div><button className="select-button">最近 7 天⌄</button></div><div className="chart"><div className="y-labels"><span>100%</span><span>80%</span><span>60%</span><span>40%</span><span>20%</span></div><div className="chart-area"><div className="grid-lines"/><svg viewBox="0 0 600 190" preserveAspectRatio="none"><defs><linearGradient id="fill" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#7658e8" stopOpacity=".25"/><stop offset="1" stopColor="#7658e8" stopOpacity="0"/></linearGradient></defs><path d="M0,132 C60,126 78,104 120,113 S182,146 220,109 S280,82 320,95 S372,118 415,72 S475,93 510,47 S560,63 600,28 V190 H0Z" fill="url(#fill)"/><path d="M0,132 C60,126 78,104 120,113 S182,146 220,109 S280,82 320,95 S372,118 415,72 S475,93 510,47 S560,63 600,28" fill="none" stroke="#7658e8" strokeWidth="3"/></svg><div className="x-labels"><span>周二</span><span>周三</span><span>周四</span><span>周五</span><span>周六</span><span>周日</span><span>今天</span></div></div></div></section><section className="panel"><div className="panel-head"><div><h3>错误类型分布</h3><p>找到问题，才能解决问题</p></div><Link to="/mistakes" className="more-link">详情 <ChevronRight size={14}/></Link></div><div className="donut-wrap"><div className="donut"><div><strong>4</strong><small>类型</small></div></div><div className="legend">{types.map(([type,n],i)=><div key={type}><i className={`dot d${i}`}/><span>{type}</span><b>{n}</b></div>)}</div></div></section></div><section className="panel recent"><div className="panel-head"><div><h3>最近错题</h3><p>你的学习记录</p></div><Link to="/mistakes" className="more-link">查看全部 <ChevronRight size={14}/></Link></div><div className="mistake-table">{mistakes.slice(0,4).map(m=><MistakeRow key={m.id} m={m}/>)}</div></section></> }
-function Stat({label,value,unit,change,positive}:{label:string;value:string|number;unit:string;change:string;positive?:boolean}){return <div className="stat-card"><span>{label}</span><div><strong>{value}</strong><small>{unit}</small></div><p className={positive?'positive':''}>{positive?'↑':'•'} {change}</p></div>}
-function MistakeRow({m}:{m:Mistake}){return <Link to={`/mistakes/${m.id}`} className="mistake-row"><div className="subject-icon"><FileImage size={17}/></div><div className="row-title"><strong>{m.title}</strong><span>{m.subject} · {m.chapter}</span></div><span className="type-pill">{m.type}</span><Status status={m.status}/><span className="row-date">{m.createdAt}</span><ChevronRight size={16} className="row-arrow"/></Link>}
-function Status({status}:{status:Mistake['status']}){return <span className={`status ${status}`}>{status==='completed'?'已完成':status==='analyzing'?'分析中':'排队中'}</span>}
-function Mistakes(){const [search,setSearch]=useState('');const list=api.listMistakes().filter(m=>m.title.includes(search)||m.subject.includes(search));return <><PageTitle eyebrow="MISTAKE LIBRARY" title="我的错题" action={<Link to="/mistakes/upload" className="primary"><Plus size={17}/> 上传错题</Link>}/><div className="toolbar"><div className="search"><Search size={17}/><input placeholder="搜索题目、学科或知识点" value={search} onChange={e=>setSearch(e.target.value)}/></div><button className="filter-button">全部学科⌄</button><button className="filter-button">全部状态⌄</button></div><section className="panel list-panel"><div className="list-summary"><span>共 {list.length} 道错题</span><span>按最近上传排序⌄</span></div>{list.map(m=><MistakeRow key={m.id} m={m}/>)}</section></>}
-function UploadPage(){const nav=useNavigate();const [title,setTitle]=useState('');const [subject,setSubject]=useState('数学');const [chapter,setChapter]=useState('');const [type,setType]=useState('概念不清');const [text,setText]=useState('');const [image,setImage]=useState<string>();const user=api.getState().user;const onFile=(file?:File)=>{if(!file)return;if(file.size>10*1024*1024){alert('图片不能超过 10MB');return}if(!file.type.match(/image\/(png|jpeg|webp)/)){alert('仅支持 PNG、JPG、WEBP 图片');return}const r=new FileReader();r.onload=()=>setImage(String(r.result));r.readAsDataURL(file)};const submit=(e:React.FormEvent)=>{e.preventDefault();if(!title&&!text&&!image){alert('请至少上传图片或填写题目文字');return}if(!user||user.credits<1){nav('/payment');return}const m=api.submit({title:title||'文字错题记录',subject,chapter:chapter||'待分类',type,image});nav(`/mistakes/${m.id}`)};return <><PageTitle eyebrow="NEW SUBMISSION" title="上传一道错题" action={<div className="credit-pill large"><WalletCards size={16}/> 剩余 <b>{user?.credits??0}</b> 次分析</div>}/><form className="upload-layout" onSubmit={submit}><div className="upload-main"><section className="panel"><div className="panel-heading"><span className="number">01</span><div><h3>上传题目图片</h3><p>拍照或选择清晰的题目截图，AI 会自动识别内容</p></div></div><label className={image?'dropzone has-image':'dropzone'}>{image?<><img src={image}/><button type="button" className="remove-image" onClick={e=>{e.preventDefault();setImage(undefined)}}><X size={16}/></button></>:<><span className="upload-icon"><Upload size={22}/></span><strong>拖拽图片到这里，或 <u>点击上传</u></strong><small>支持 PNG、JPG、WEBP，最大 10MB</small></>}<input type="file" accept="image/png,image/jpeg,image/webp" onChange={e=>onFile(e.target.files?.[0])}/></label></section><section className="panel"><div className="panel-heading"><span className="number">02</span><div><h3>补充题目文字 <span className="optional">选填</span></h3><p>如果图片不清晰，可以手动补充题目和你的答案</p></div></div><textarea className="question-input" placeholder="粘贴或输入题目内容……" value={text} onChange={e=>setText(e.target.value)}/><div className="field-grid"><label>题目名称<input value={title} onChange={e=>setTitle(e.target.value)} placeholder="例如：二次函数图像与最值"/></label><label>你的答案<input placeholder="选填"/></label></div></section></div><aside className="upload-side panel"><h3>题目分类</h3><p>帮助我们给你更精准的分析</p><label>学科<select value={subject} onChange={e=>setSubject(e.target.value)}><option>数学</option><option>物理</option><option>英语</option><option>化学</option></select></label><label>章节 / 知识点<input value={chapter} onChange={e=>setChapter(e.target.value)} placeholder="例如：函数"/></label><label>你觉得错在哪里？<select value={type} onChange={e=>setType(e.target.value)}><option>概念不清</option><option>计算错误</option><option>审题错误</option><option>方法不熟</option><option>粗心失误</option></select></label><div className="analysis-note"><Sparkles size={17}/><span>AI 将从解题步骤、知识点和错误原因三个维度分析。</span></div><button className="primary wide" type="submit">开始智能分析 <ChevronRight size={17}/></button><small className="cost-note"><WalletCards size={13}/> 本次分析消耗 1 次额度</small></aside></form></>}
-function MistakeDetail(){const {id}=useParams();const nav=useNavigate();const [,refresh]=useState(0);useEffect(()=>{const f=()=>refresh(x=>x+1);window.addEventListener('mock-update',f);return()=>window.removeEventListener('mock-update',f)},[]);const m=api.listMistakes().find(x=>x.id===id);if(!m)return <div className="empty"><h2>没有找到这道错题</h2><Link to="/mistakes" className="primary">返回错题库</Link></div>;return <><button className="back-link" onClick={()=>nav('/mistakes')}>← 返回错题库</button><PageTitle eyebrow={m.subject+' · '+m.chapter} title={m.title} action={<Status status={m.status}/>}/><div className="detail-grid"><section className="panel original"><div className="panel-head"><div><h3>原题记录</h3><p>{m.createdAt} 上传</p></div><button className="icon-button"><Search size={17}/></button></div>{m.image?<img src={m.image} className="original-image"/>:<div className="text-question"><p>{m.title}：请根据题目条件完成解答，并说明你的思考过程。</p><span>你的答案：待补充</span></div>}<div className="answer-box"><span>错误类型</span><strong>{m.type}</strong></div></section><section className="panel analysis-panel">{m.status!=='completed'?<div className="analysis-loading"><div className="pulse"><Sparkles size={25}/></div><h3>正在分析这道题…</h3><p>AI 正在识别题目并拆解你的解题思路<br/>通常需要几秒钟，请稍候。</p><div className="progress"><i/></div><small>分析任务 {m.status==='queued'?'排队中':'进行中'}</small></div>:<><div className="analysis-title"><span className="tag tag-purple"><Sparkles size={13}/> AI 分析完成</span><span className="confidence">置信度 94%</span></div><h2>这道题，你卡在了哪里？</h2><p className="analysis-summary">{m.analysis?.summary}</p><div className="analysis-section"><h4><span>01</span>涉及知识点</h4><div className="knowledge-list">{m.analysis?.knowledge.map(k=><span key={k}>{k}</span>)}</div></div><div className="analysis-section"><h4><span>02</span>正确解题思路</h4><ol>{m.analysis?.steps.map(s=><li key={s}>{s}</li>)}</ol></div><div className="tip-box"><Sparkles size={18}/><div><strong>给你的建议</strong><p>{m.analysis?.suggestion}</p></div></div><div className="answer-box correct"><span>参考答案</span><strong>{m.analysis?.answer}</strong></div><button className="secondary wide"><CheckCircle2 size={17}/> 标记为已掌握</button></>}</section></div></>}
-function Payment(){const nav=useNavigate();const [selected,setSelected]=useState(1);const plans=[{n:'单次体验',count:1,price:1,desc:'适合先试试看'},{n:'进阶学习包',count:10,price:8,desc:'平均每次 ¥0.8',hot:true},{n:'高效冲刺包',count:30,price:18,desc:'平均每次 ¥0.6'}];return <div className="payment-page"><button className="back-link" onClick={()=>nav(-1)}>← 返回</button><div className="payment-head"><span className="icon-chip"><WalletCards size={19}/></span><p className="eyebrow">LEARNING CREDITS</p><h1>解锁你的分析次数</h1><p>每一次分析，都是一次把问题变清楚的机会。</p></div><div className="plans">{plans.map((p,i)=><button key={p.n} className={`plan ${selected===i?'selected':''}`} onClick={()=>setSelected(i)}>{p.hot&&<span className="hot">最受欢迎</span>}<span className="radio"/><h3>{p.n}</h3><strong><small>¥</small>{p.price}</strong><span>{p.count} 次 AI 错题分析</span><small>{p.desc}</small></button>)}</div><div className="payment-summary"><span>模拟支付 · 演示环境</span><strong>¥{plans[selected].price}.00</strong></div><button className="primary pay-button" onClick={()=>{api.addCredits(plans[selected].count);nav('/payment/result')}}>模拟支付成功 <ChevronRight size={17}/></button><p className="secure-note">🔒 演示模式不会产生真实扣款</p></div>}
-function PaymentResult(){const nav=useNavigate();return <div className="result-page"><div className="success-icon"><CheckCircle2 size={42}/></div><p className="eyebrow">PAYMENT SUCCESSFUL</p><h1>额度已到账 🎉</h1><p>你的分析次数已经更新，现在就去上传一道错题吧。</p><Link to="/mistakes/upload" className="primary">去上传错题 <ChevronRight size={17}/></Link><button className="text-button" onClick={()=>nav('/dashboard')}>返回学习总览</button></div>}
-function Profile(){const user=api.getState().user!;return <><PageTitle eyebrow="ACCOUNT" title="个人设置"/><section className="panel profile-card"><div className="profile-avatar">{user.name[0]?.toUpperCase()}</div><div><h2>{user.name}</h2><p>{user.email}</p></div><button className="secondary" onClick={()=>{api.logout();window.location.href='/login'}}><LogOut size={16}/> 退出登录</button></section><section className="panel profile-form"><h3>账户信息</h3><label>显示名称<input defaultValue={user.name}/></label><label>邮箱地址<input defaultValue={user.email}/></label><button className="primary">保存修改</button></section></>}
-export default function App(){return <Routes><Route path="/login" element={<Auth/>}/><Route path="/register" element={<Auth register/>}/><Route path="/payment" element={<Guard><Payment/></Guard>}/><Route path="/payment/result" element={<Guard><PaymentResult/></Guard>}/><Route path="*" element={<Guard><Routes><Route path="/dashboard" element={<Dashboard/>}/><Route path="/mistakes" element={<Mistakes/>}/><Route path="/mistakes/upload" element={<UploadPage/>}/><Route path="/mistakes/:id" element={<MistakeDetail/>}/><Route path="/profile" element={<Profile/>}/><Route path="*" element={<Navigate to="/dashboard"/>}/></Routes></Guard>}/></Routes>}
+function Layout({ children }: { children: React.ReactNode }) {
+  const [open, setOpen] = useState(false);
+  const loc = useLocation();
+  const user = api.getState().user;
+  const items = [
+    ["/dashboard", "总览", Home],
+    ["/mistakes", "我的错题", BookOpen],
+    ["/mistakes/upload", "上传错题", Upload],
+  ] as const;
+  return (
+    <div className="app-shell">
+      <aside className={open ? "sidebar open" : "sidebar"}>
+        <div className="side-top">
+          <Logo />
+          <button
+            className="icon-button mobile-only"
+            onClick={() => setOpen(false)}
+          >
+            <X size={20} />
+          </button>
+        </div>
+        <nav>
+          {items.map(([to, label, Icon]) => (
+            <NavLink
+              key={to}
+              to={to}
+              onClick={() => setOpen(false)}
+              className={({ isActive }) =>
+                `nav-item ${isActive || (to === "/mistakes" && loc.pathname.startsWith("/mistakes/")) ? "active" : ""}`
+              }
+            >
+              <Icon size={18} />
+              <span>{label}</span>
+            </NavLink>
+          ))}
+        </nav>
+        <div className="side-help">
+          <CircleHelp size={18} />
+          <div>
+            <strong>需要帮助？</strong>
+            <small>查看使用指南</small>
+          </div>
+          <ChevronRight size={15} />
+        </div>
+        <div className="side-user">
+          <div className="avatar">{user?.name?.[0]?.toUpperCase() || "D"}</div>
+          <div className="user-copy">
+            <strong>{user?.name || "演示同学"}</strong>
+            <small>{user?.email || "demo@mistake.lab"}</small>
+          </div>
+          <button
+            className="ghost icon-button"
+            onClick={() => {
+              api.logout();
+              window.location.href = "/login";
+            }}
+          >
+            <LogOut size={16} />
+          </button>
+        </div>
+      </aside>
+      {open && <div className="backdrop" onClick={() => setOpen(false)} />}
+      <section className="main-area">
+        <header className="topbar">
+          <button
+            className="icon-button mobile-only"
+            onClick={() => setOpen(true)}
+          >
+            <Menu size={21} />
+          </button>
+          <div className="breadcrumb">
+            学习空间 <ChevronRight size={14} />{" "}
+            <span>
+              {loc.pathname.includes("upload")
+                ? "上传错题"
+                : loc.pathname.includes("mistakes")
+                  ? "我的错题"
+                  : "总览"}
+            </span>
+          </div>
+          <div className="top-actions">
+            <div className="credit-pill">
+              <WalletCards size={16} />
+              <span>剩余分析次数</span>
+              <b>{user?.credits ?? 0}</b>
+            </div>
+            <Link className="avatar" to="/profile">
+              {user?.name?.[0]?.toUpperCase() || "D"}
+            </Link>
+          </div>
+        </header>
+        <div className="content">{children}</div>
+      </section>
+    </div>
+  );
+}
+function Guard({ children }: { children: React.ReactNode }) {
+  return api.getState().user ? (
+    <Layout>{children}</Layout>
+  ) : (
+    <Navigate to="/login" replace />
+  );
+}
+function PageTitle({
+  eyebrow,
+  title,
+  action,
+}: {
+  eyebrow?: string;
+  title: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="page-title">
+      <div>
+        <p className="eyebrow">{eyebrow}</p>
+        <h1>{title}</h1>
+      </div>
+      {action}
+    </div>
+  );
+}
+function Dashboard() {
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    const f = () => setTick((x) => x + 1);
+    window.addEventListener("mock-update", f);
+    return () => window.removeEventListener("mock-update", f);
+  }, []);
+  const mistakes = api.listMistakes();
+  const completed = mistakes.filter((m) => m.status === "completed");
+  const types = useMemo(
+    () =>
+      Object.entries(
+        mistakes.reduce<Record<string, number>>(
+          (a, m) => ((a[m.type] = (a[m.type] || 0) + 1), a),
+          {},
+        ),
+      ),
+    [mistakes, tick],
+  );
+  return (
+    <>
+      <PageTitle
+        eyebrow="MONDAY, 18 AUGUST 2026"
+        title="早上好，{api.getState().user?.name || '同学'} 👋"
+        action={
+          <Link to="/mistakes/upload" className="primary">
+            <Plus size={17} /> 上传新错题
+          </Link>
+        }
+      />
+      <div className="welcome-card">
+        <div>
+          <span className="tag tag-purple">
+            <Sparkles size={13} /> 学习小贴士
+          </span>
+          <h2>今天也要保持好奇心。</h2>
+          <p>复习 2 道“概念不清”的错题，巩固你的函数基础。</p>
+          <Link to="/mistakes" className="text-link">
+            开始复习 <ChevronRight size={15} />
+          </Link>
+        </div>
+        <div className="welcome-illustration">
+          <div className="float-card card-a">x² + 2x + 1</div>
+          <div className="float-card card-b">✓ 已掌握</div>
+          <div className="book-shape">
+            <BookOpen size={47} />
+          </div>
+        </div>
+      </div>
+      <div className="stats-grid">
+        <Stat
+          label="累计错题"
+          value={mistakes.length}
+          unit="道"
+          change="较上周 +12%"
+          positive
+        />
+        <Stat
+          label="本周新增"
+          value={
+            mistakes.filter(
+              (m) =>
+                m.createdAt.includes("今天") || m.createdAt.includes("昨天"),
+            ).length
+          }
+          unit="道"
+          change="保持得很好"
+          positive
+        />
+        <Stat
+          label="平均正确率"
+          value="72"
+          unit="%"
+          change="较上周 +8%"
+          positive
+        />
+        <Stat
+          label="待复习"
+          value={mistakes.filter((m) => m.status !== "completed").length + 2}
+          unit="道"
+          change="需要关注"
+        />{" "}
+      </div>
+      <div className="dashboard-grid">
+        <section className="panel chart-panel">
+          <div className="panel-head">
+            <div>
+              <h3>正确率趋势</h3>
+              <p>过去 7 天的答题表现</p>
+            </div>
+            <button className="select-button">最近 7 天⌄</button>
+          </div>
+          <div className="chart">
+            <div className="y-labels">
+              <span>100%</span>
+              <span>80%</span>
+              <span>60%</span>
+              <span>40%</span>
+              <span>20%</span>
+            </div>
+            <div className="chart-area">
+              <div className="grid-lines" />
+              <svg viewBox="0 0 600 190" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="fill" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0" stopColor="#7658e8" stopOpacity=".25" />
+                    <stop offset="1" stopColor="#7658e8" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                <path
+                  d="M0,132 C60,126 78,104 120,113 S182,146 220,109 S280,82 320,95 S372,118 415,72 S475,93 510,47 S560,63 600,28 V190 H0Z"
+                  fill="url(#fill)"
+                />
+                <path
+                  d="M0,132 C60,126 78,104 120,113 S182,146 220,109 S280,82 320,95 S372,118 415,72 S475,93 510,47 S560,63 600,28"
+                  fill="none"
+                  stroke="#7658e8"
+                  strokeWidth="3"
+                />
+              </svg>
+              <div className="x-labels">
+                <span>周二</span>
+                <span>周三</span>
+                <span>周四</span>
+                <span>周五</span>
+                <span>周六</span>
+                <span>周日</span>
+                <span>今天</span>
+              </div>
+            </div>
+          </div>
+        </section>
+        <section className="panel">
+          <div className="panel-head">
+            <div>
+              <h3>错误类型分布</h3>
+              <p>找到问题，才能解决问题</p>
+            </div>
+            <Link to="/mistakes" className="more-link">
+              详情 <ChevronRight size={14} />
+            </Link>
+          </div>
+          <div className="donut-wrap">
+            <div className="donut">
+              <div>
+                <strong>4</strong>
+                <small>类型</small>
+              </div>
+            </div>
+            <div className="legend">
+              {types.map(([type, n], i) => (
+                <div key={type}>
+                  <i className={`dot d${i}`} />
+                  <span>{type}</span>
+                  <b>{n}</b>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+      <section className="panel recent">
+        <div className="panel-head">
+          <div>
+            <h3>最近错题</h3>
+            <p>你的学习记录</p>
+          </div>
+          <Link to="/mistakes" className="more-link">
+            查看全部 <ChevronRight size={14} />
+          </Link>
+        </div>
+        <div className="mistake-table">
+          {mistakes.slice(0, 4).map((m) => (
+            <MistakeRow key={m.id} m={m} />
+          ))}
+        </div>
+      </section>
+    </>
+  );
+}
+function Stat({
+  label,
+  value,
+  unit,
+  change,
+  positive,
+}: {
+  label: string;
+  value: string | number;
+  unit: string;
+  change: string;
+  positive?: boolean;
+}) {
+  return (
+    <div className="stat-card">
+      <span>{label}</span>
+      <div>
+        <strong>{value}</strong>
+        <small>{unit}</small>
+      </div>
+      <p className={positive ? "positive" : ""}>
+        {positive ? "↑" : "•"} {change}
+      </p>
+    </div>
+  );
+}
+function MistakeRow({ m }: { m: Mistake }) {
+  return (
+    <Link to={`/mistakes/${m.id}`} className="mistake-row">
+      <div className="subject-icon">
+        <FileImage size={17} />
+      </div>
+      <div className="row-title">
+        <strong>{m.title}</strong>
+        <span>
+          {m.subject} · {m.chapter}
+        </span>
+      </div>
+      <span className="type-pill">{m.type}</span>
+      <Status status={m.status} />
+      <span className="row-date">{m.createdAt}</span>
+      <ChevronRight size={16} className="row-arrow" />
+    </Link>
+  );
+}
+function Status({ status }: { status: Mistake["status"] }) {
+  return (
+    <span className={`status ${status}`}>
+      {status === "completed"
+        ? "已完成"
+        : status === "analyzing"
+          ? "分析中"
+          : "排队中"}
+    </span>
+  );
+}
+function Mistakes() {
+  const [search, setSearch] = useState("");
+  const list = api
+    .listMistakes()
+    .filter((m) => m.title.includes(search) || m.subject.includes(search));
+  return (
+    <>
+      <PageTitle
+        eyebrow="MISTAKE LIBRARY"
+        title="我的错题"
+        action={
+          <Link to="/mistakes/upload" className="primary">
+            <Plus size={17} /> 上传错题
+          </Link>
+        }
+      />
+      <div className="toolbar">
+        <div className="search">
+          <Search size={17} />
+          <input
+            placeholder="搜索题目、学科或知识点"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <button className="filter-button">全部学科⌄</button>
+        <button className="filter-button">全部状态⌄</button>
+      </div>
+      <section className="panel list-panel">
+        <div className="list-summary">
+          <span>共 {list.length} 道错题</span>
+          <span>按最近上传排序⌄</span>
+        </div>
+        {list.map((m) => (
+          <MistakeRow key={m.id} m={m} />
+        ))}
+      </section>
+    </>
+  );
+}
+function UploadPage() {
+  const nav = useNavigate();
+  const [title, setTitle] = useState("");
+  const [subject, setSubject] = useState("数学");
+  const [chapter, setChapter] = useState("");
+  const [type, setType] = useState("概念不清");
+  const [text, setText] = useState("");
+  const [image, setImage] = useState<string>();
+  const user = api.getState().user;
+  const onFile = (file?: File) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      alert("图片不能超过 10MB");
+      return;
+    }
+    if (!file.type.match(/image\/(png|jpeg|webp)/)) {
+      alert("仅支持 PNG、JPG、WEBP 图片");
+      return;
+    }
+    const r = new FileReader();
+    r.onload = () => setImage(String(r.result));
+    r.readAsDataURL(file);
+  };
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!title && !text && !image) {
+      alert("请至少上传图片或填写题目文字");
+      return;
+    }
+    if (!user || user.credits < 1) {
+      nav("/payment");
+      return;
+    }
+    const m = api.submit({
+      title: title || "文字错题记录",
+      subject,
+      chapter: chapter || "待分类",
+      type,
+      image,
+    });
+    nav(`/mistakes/${m.id}`);
+  };
+  return (
+    <>
+      <PageTitle
+        eyebrow="NEW SUBMISSION"
+        title="上传一道错题"
+        action={
+          <div className="credit-pill large">
+            <WalletCards size={16} /> 剩余 <b>{user?.credits ?? 0}</b> 次分析
+          </div>
+        }
+      />
+      <form className="upload-layout" onSubmit={submit}>
+        <div className="upload-main">
+          <section className="panel">
+            <div className="panel-heading">
+              <span className="number">01</span>
+              <div>
+                <h3>上传题目图片</h3>
+                <p>拍照或选择清晰的题目截图，AI 会自动识别内容</p>
+              </div>
+            </div>
+            <label className={image ? "dropzone has-image" : "dropzone"}>
+              {image ? (
+                <>
+                  <img src={image} />
+                  <button
+                    type="button"
+                    className="remove-image"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      setImage(undefined);
+                    }}
+                  >
+                    <X size={16} />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="upload-icon">
+                    <Upload size={22} />
+                  </span>
+                  <strong>
+                    拖拽图片到这里，或 <u>点击上传</u>
+                  </strong>
+                  <small>支持 PNG、JPG、WEBP，最大 10MB</small>
+                </>
+              )}
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(e) => onFile(e.target.files?.[0])}
+              />
+            </label>
+          </section>
+          <section className="panel">
+            <div className="panel-heading">
+              <span className="number">02</span>
+              <div>
+                <h3>
+                  补充题目文字 <span className="optional">选填</span>
+                </h3>
+                <p>如果图片不清晰，可以手动补充题目和你的答案</p>
+              </div>
+            </div>
+            <textarea
+              className="question-input"
+              placeholder="粘贴或输入题目内容……"
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+            />
+            <div className="field-grid">
+              <label>
+                题目名称
+                <input
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="例如：二次函数图像与最值"
+                />
+              </label>
+              <label>
+                你的答案
+                <input placeholder="选填" />
+              </label>
+            </div>
+          </section>
+        </div>
+        <aside className="upload-side panel">
+          <h3>题目分类</h3>
+          <p>帮助我们给你更精准的分析</p>
+          <label>
+            学科
+            <select
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+            >
+              <option>数学</option>
+              <option>物理</option>
+              <option>英语</option>
+              <option>化学</option>
+            </select>
+          </label>
+          <label>
+            章节 / 知识点
+            <input
+              value={chapter}
+              onChange={(e) => setChapter(e.target.value)}
+              placeholder="例如：函数"
+            />
+          </label>
+          <label>
+            你觉得错在哪里？
+            <select value={type} onChange={(e) => setType(e.target.value)}>
+              <option>概念不清</option>
+              <option>计算错误</option>
+              <option>审题错误</option>
+              <option>方法不熟</option>
+              <option>粗心失误</option>
+            </select>
+          </label>
+          <div className="analysis-note">
+            <Sparkles size={17} />
+            <span>AI 将从解题步骤、知识点和错误原因三个维度分析。</span>
+          </div>
+          <button className="primary wide" type="submit">
+            开始智能分析 <ChevronRight size={17} />
+          </button>
+          <small className="cost-note">
+            <WalletCards size={13} /> 本次分析消耗 1 次额度
+          </small>
+        </aside>
+      </form>
+    </>
+  );
+}
+function MistakeDetail() {
+  const { id } = useParams();
+  const nav = useNavigate();
+  const [, refresh] = useState(0);
+  useEffect(() => {
+    const f = () => refresh((x) => x + 1);
+    window.addEventListener("mock-update", f);
+    return () => window.removeEventListener("mock-update", f);
+  }, []);
+  const m = api.listMistakes().find((x) => x.id === id);
+  if (!m)
+    return (
+      <div className="empty">
+        <h2>没有找到这道错题</h2>
+        <Link to="/mistakes" className="primary">
+          返回错题库
+        </Link>
+      </div>
+    );
+  return (
+    <>
+      <button className="back-link" onClick={() => nav("/mistakes")}>
+        ← 返回错题库
+      </button>
+      <PageTitle
+        eyebrow={m.subject + " · " + m.chapter}
+        title={m.title}
+        action={<Status status={m.status} />}
+      />
+      <div className="detail-grid">
+        <section className="panel original">
+          <div className="panel-head">
+            <div>
+              <h3>原题记录</h3>
+              <p>{m.createdAt} 上传</p>
+            </div>
+            <button className="icon-button">
+              <Search size={17} />
+            </button>
+          </div>
+          {m.image ? (
+            <img src={m.image} className="original-image" />
+          ) : (
+            <div className="text-question">
+              <p>{m.title}：请根据题目条件完成解答，并说明你的思考过程。</p>
+              <span>你的答案：待补充</span>
+            </div>
+          )}
+          <div className="answer-box">
+            <span>错误类型</span>
+            <strong>{m.type}</strong>
+          </div>
+        </section>
+        <section className="panel analysis-panel">
+          {m.status !== "completed" ? (
+            <div className="analysis-loading">
+              <div className="pulse">
+                <Sparkles size={25} />
+              </div>
+              <h3>正在分析这道题…</h3>
+              <p>
+                AI 正在识别题目并拆解你的解题思路
+                <br />
+                通常需要几秒钟，请稍候。
+              </p>
+              <div className="progress">
+                <i />
+              </div>
+              <small>
+                分析任务 {m.status === "queued" ? "排队中" : "进行中"}
+              </small>
+            </div>
+          ) : (
+            <>
+              <div className="analysis-title">
+                <span className="tag tag-purple">
+                  <Sparkles size={13} /> AI 分析完成
+                </span>
+                <span className="confidence">置信度 94%</span>
+              </div>
+              <h2>这道题，你卡在了哪里？</h2>
+              <p className="analysis-summary">{m.analysis?.summary}</p>
+              <div className="analysis-section">
+                <h4>
+                  <span>01</span>涉及知识点
+                </h4>
+                <div className="knowledge-list">
+                  {m.analysis?.knowledge.map((k) => (
+                    <span key={k}>{k}</span>
+                  ))}
+                </div>
+              </div>
+              <div className="analysis-section">
+                <h4>
+                  <span>02</span>正确解题思路
+                </h4>
+                <ol>
+                  {m.analysis?.steps.map((s) => (
+                    <li key={s}>{s}</li>
+                  ))}
+                </ol>
+              </div>
+              <div className="tip-box">
+                <Sparkles size={18} />
+                <div>
+                  <strong>给你的建议</strong>
+                  <p>{m.analysis?.suggestion}</p>
+                </div>
+              </div>
+              <div className="answer-box correct">
+                <span>参考答案</span>
+                <strong>{m.analysis?.answer}</strong>
+              </div>
+              <button className="secondary wide">
+                <CheckCircle2 size={17} /> 标记为已掌握
+              </button>
+            </>
+          )}
+        </section>
+      </div>
+    </>
+  );
+}
+function Payment() {
+  const nav = useNavigate();
+  const [selected, setSelected] = useState(1);
+  const plans = [
+    { n: "单次体验", count: 1, price: 1, desc: "适合先试试看" },
+    { n: "进阶学习包", count: 10, price: 8, desc: "平均每次 ¥0.8", hot: true },
+    { n: "高效冲刺包", count: 30, price: 18, desc: "平均每次 ¥0.6" },
+  ];
+  return (
+    <div className="payment-page">
+      <button className="back-link" onClick={() => nav(-1)}>
+        ← 返回
+      </button>
+      <div className="payment-head">
+        <span className="icon-chip">
+          <WalletCards size={19} />
+        </span>
+        <p className="eyebrow">LEARNING CREDITS</p>
+        <h1>解锁你的分析次数</h1>
+        <p>每一次分析，都是一次把问题变清楚的机会。</p>
+      </div>
+      <div className="plans">
+        {plans.map((p, i) => (
+          <button
+            key={p.n}
+            className={`plan ${selected === i ? "selected" : ""}`}
+            onClick={() => setSelected(i)}
+          >
+            {p.hot && <span className="hot">最受欢迎</span>}
+            <span className="radio" />
+            <h3>{p.n}</h3>
+            <strong>
+              <small>¥</small>
+              {p.price}
+            </strong>
+            <span>{p.count} 次 AI 错题分析</span>
+            <small>{p.desc}</small>
+          </button>
+        ))}
+      </div>
+      <div className="payment-summary">
+        <span>模拟支付 · 演示环境</span>
+        <strong>¥{plans[selected].price}.00</strong>
+      </div>
+      <button
+        className="primary pay-button"
+        onClick={() => {
+          api.addCredits(plans[selected].count);
+          nav("/payment/result");
+        }}
+      >
+        模拟支付成功 <ChevronRight size={17} />
+      </button>
+      <p className="secure-note">🔒 演示模式不会产生真实扣款</p>
+    </div>
+  );
+}
+function PaymentResult() {
+  const nav = useNavigate();
+  return (
+    <div className="result-page">
+      <div className="success-icon">
+        <CheckCircle2 size={42} />
+      </div>
+      <p className="eyebrow">PAYMENT SUCCESSFUL</p>
+      <h1>额度已到账 🎉</h1>
+      <p>你的分析次数已经更新，现在就去上传一道错题吧。</p>
+      <Link to="/mistakes/upload" className="primary">
+        去上传错题 <ChevronRight size={17} />
+      </Link>
+      <button className="text-button" onClick={() => nav("/dashboard")}>
+        返回学习总览
+      </button>
+    </div>
+  );
+}
+function Profile() {
+  const user = api.getState().user!;
+  return (
+    <>
+      <PageTitle eyebrow="ACCOUNT" title="个人设置" />
+      <section className="panel profile-card">
+        <div className="profile-avatar">{user.name[0]?.toUpperCase()}</div>
+        <div>
+          <h2>{user.name}</h2>
+          <p>{user.email}</p>
+        </div>
+        <button
+          className="secondary"
+          onClick={() => {
+            api.logout();
+            window.location.href = "/login";
+          }}
+        >
+          <LogOut size={16} /> 退出登录
+        </button>
+      </section>
+      <section className="panel profile-form">
+        <h3>账户信息</h3>
+        <label>
+          显示名称
+          <input defaultValue={user.name} />
+        </label>
+        <label>
+          邮箱地址
+          <input defaultValue={user.email} />
+        </label>
+        <button className="primary">保存修改</button>
+      </section>
+    </>
+  );
+}
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Auth />} />
+      <Route path="/register" element={<Auth register />} />
+      <Route
+        path="/payment"
+        element={
+          <Guard>
+            <Payment />
+          </Guard>
+        }
+      />
+      <Route
+        path="/payment/result"
+        element={
+          <Guard>
+            <PaymentResult />
+          </Guard>
+        }
+      />
+      <Route
+        path="*"
+        element={
+          <Guard>
+            <Routes>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/mistakes" element={<Mistakes />} />
+              <Route path="/mistakes/upload" element={<UploadPage />} />
+              <Route path="/mistakes/:id" element={<MistakeDetail />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="*" element={<Navigate to="/dashboard" />} />
+            </Routes>
+          </Guard>
+        }
+      />
+    </Routes>
+  );
+}
