@@ -82,12 +82,16 @@ replay_pid*
 node_modules/
 .pnp
 .pnp.js
+npm-debug.log*
+.npm/
 
 # 打包构建产物
 dist/
 dist-ssr/
 build/
 *.local
+.vite/
+*.tsbuildinfo
 
 # 前端日志
 npm-debug.log*
@@ -107,6 +111,7 @@ lerna-debug.log*
 # 前端本地环境变量配置 (包含敏感 key，不提交)
 .env.local
 .env.*.local
+.env
 !.env.example
 
 # 测试覆盖率报告
