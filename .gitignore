@@ -1,0 +1,121 @@
+# ==========================================
+# 1. 操作系统临时文件
+# ==========================================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+[Dd]esktop.ini
+
+# ==========================================
+# 2. IDE / 编辑器配置
+# ==========================================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+!**/src/main/**/out/
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+*.code-workspace
+
+# Eclipse
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+# ==========================================
+# 3. 后端 (Spring Cloud / Java / Maven / Gradle)
+# ==========================================
+# 编译输出
+*.class
+target/
+build/
+bin/
+
+# 打包文件 (按需放行，通常不提交 jar/war)
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+
+# Maven / Gradle 缓存
+.gradle/
+gradle-app.setting
+!gradle-wrapper.jar
+.m2/
+
+# 日志与性能分析
+*.log
+logs/
+*.hprof
+hs_err_pid*
+replay_pid*
+
+# 敏感/本地配置文件 (根据实际情况放行或忽略)
+# 比如本地测试用的 application-local.yml
+**/src/main/resources/*-local.yml
+**/src/main/resources/*-local.properties
+**/src/main/resources/*-dev.yml.secret
+
+# ==========================================
+# 4. 前端 (Node.js / Vue / React / Vite / Webpack)
+# ==========================================
+# 依赖包 (严禁提交)
+node_modules/
+.pnp
+.pnp.js
+
+# 打包构建产物
+dist/
+dist-ssr/
+build/
+*.local
+
+# 前端日志
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# 缓存目录
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.temp/
+.tmp/
+
+# 前端本地环境变量配置 (包含敏感 key，不提交)
+.env.local
+.env.*.local
+!.env.example
+
+# 测试覆盖率报告
+coverage/
+*.lcov
+.nyc_output/
+
+# ==========================================
+# 5. 其他工具与容器 (Docker / 本地配置)
+# ==========================================
+.docker/
+docker-compose.override.yml
