@@ -57,8 +57,10 @@ services:
     ports:
       - "18080:80"
     volumes:
-      - /Users/user/docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - /Users/user/docker/nginx/conf.d:/etc/nginx/conf.d:ro
+      - /Users/user/learn-web/deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /Users/user/learn-web/frontend/dist:/usr/share/nginx/html:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     healthcheck:
       test: ["CMD-SHELL", "wget --spider --quiet http://127.0.0.1/ || exit 1"]
       interval: 10s
