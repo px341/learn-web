@@ -124,4 +124,7 @@ coverage/
 # ==========================================
 .docker/
 docker-compose.override.yml
-deploy/
+deploy/*
+!deploy/nginx/
+deploy/nginx/*
+!deploy/nginx/nginx.conf

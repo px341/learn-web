@@ -1,4 +1,31 @@
 services:
+  nacos:
+    image: nacos/nacos-server:v3.0.3-slim
+    container_name: nacos
+    restart: unless-stopped
+    environment:
+      MODE: standalone
+      # 仅限本地开发；部署到共享环境时应开启鉴权并给客户端配置账号密码。
+      NACOS_AUTH_ENABLE: "false"
+      NACOS_AUTH_TOKEN: VGhpcy1pcy1hLWRldmVsb3BtZW50LW5hY29zLXNlY3JldC1rZXktYXQtbGVhc3QtMzItYnl0ZXM=
+      NACOS_AUTH_IDENTITY_KEY: learn-web
+      NACOS_AUTH_IDENTITY_VALUE: learn-web-dev
+      JVM_XMS: 256m
+      JVM_XMX: 512m
+      JVM_XMN: 128m
+    ports:
+      - "18083:8080"
+      - "8848:8848"
+      - "9848:9848"
+    volumes:
+      - nacos-data:/home/nacos/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://127.0.0.1:8848/nacos/v3/admin/core/state/readiness || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+      start_period: 40s
+
   postgres:
     image: postgres:17
     container_name: postgres
@@ -57,8 +84,8 @@ services:
     ports:
       - "18080:80"
     volumes:
-      - /Users/user/learn-web/deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - /Users/user/learn-web/frontend/dist:/usr/share/nginx/html:ro
+      - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./frontend/dist:/usr/share/nginx/html:ro
     extra_hosts:
       - "host.docker.internal:host-gateway"
     healthcheck:
@@ -68,6 +95,7 @@ services:
       retries: 10
 
 volumes:
+  nacos-data:
   postgres-data:
   redis-data:
   rabbitmq-data:
