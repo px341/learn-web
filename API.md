@@ -28,7 +28,15 @@
 
 ### `POST /api/auth/register`
 
-请求字段：`name`、`email`、`password`。
+注册页面提交字段：`name`、`email`、`password`、`passwordConfirmation`。
+
+请求：
+
+```json
+{"name":"小林","email":"xiaolin@example.com","password":"123456","passwordConfirmation":"123456"}
+```
+
+后端需要校验邮箱格式、密码长度、两次密码一致，以及邮箱是否已注册。成功后返回与登录接口相同的 `token` 和 `user` 数据结构，并默认赠送 3 次分析额度。
 
 ## 用户与额度
 

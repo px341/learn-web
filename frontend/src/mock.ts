@@ -98,6 +98,11 @@ export const api = {
     persist();
     return state.user;
   },
+  register: (name: string, email: string) => {
+    state.user = { name: name.trim() || email.split("@")[0] || "同学", email, credits: 3 };
+    persist();
+    return state.user;
+  },
   logout: () => {
     state.user = null;
     persist();

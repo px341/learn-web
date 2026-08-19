@@ -44,6 +44,7 @@ function Logo() {
 }
 function Auth({ register = false }: { register?: boolean }) {
   const nav = useNavigate();
+  const [name, setName] = useState(register ? "" : "演示同学");
   const [email, setEmail] = useState("demo@mistake.lab");
   return (
     <main className="auth-shell">
@@ -77,7 +78,7 @@ function Auth({ register = false }: { register?: boolean }) {
           <span className="icon-chip">
             <Sparkles size={17} />
           </span>
-          <p className="eyebrow">WELCOME BACK</p>
+          <p className="eyebrow">{register ? "JOIN MISTAKE LAB" : "WELCOME BACK"}</p>
           <h2>{register ? "创建你的学习空间" : "欢迎回来，同学"}</h2>
           <p>
             {register
@@ -88,10 +89,17 @@ function Auth({ register = false }: { register?: boolean }) {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            api.login(email);
+            if (register) api.register(name, email);
+            else api.login(email);
             nav("/dashboard");
           }}
         >
+          {register && (
+            <label>
+              你的称呼
+              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如：小林" />
+            </label>
+          )}
           <label>
             邮箱或手机号
             <input
@@ -126,6 +134,7 @@ function Auth({ register = false }: { register?: boolean }) {
             {register ? "创建账户" : "登录"} <ChevronRight size={17} />
           </button>
         </form>
+        {register && <p className="terms-note">注册即表示你同意错题实验室的服务条款与隐私政策。</p>}
         <div className="divider">
           <span>或者</span>
         </div>
