@@ -1,9 +1,14 @@
 server:
   port: 18081
+  forward-headers-strategy: framework
 
 spring:
   application:
     name: gateway
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
   cloud:
     nacos:
       discovery:
@@ -16,3 +21,32 @@ spring:
               uri: lb://auth-service
               predicates:
                 - Path=/api/auth/**
+              filters:
+                - name: RequestRateLimiter
+                  args:
+                    key-resolver: "#{@clientIpKeyResolver}"
+                    redis-rate-limiter.replenishRate: 1
+                    redis-rate-limiter.burstCapacity: 5
+                    redis-rate-limiter.requestedTokens: 1
+
+security:
+  jwt:
+    # 本地开发默认值；共享环境必须通过 JWT_SECRET 注入至少 32 字节的随机密钥。
+    secret: ${JWT_SECRET:change-this-dev-secret-key-at-least-32-bytes}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: when_authorized
+  tracing:
+    sampling:
+      probability: ${TRACING_SAMPLING_PROBABILITY:1.0}
+
+logging:
+  include-application-name: false
+  pattern:
+    correlation: "[${spring.application.name:},%X{traceId:-},%X{spanId:-}] "
