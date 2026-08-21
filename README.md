@@ -8,7 +8,7 @@ npm install
 npm run dev
 ```
 
-API 对接契约见 [API.md](./API.md)。前端当前默认使用 `frontend/src/mock.ts`，后续把服务层替换为真实 API 即可。
+API 对接契约见 [API.md](./API.md)。前端登录和注册已接入真实 API；错题分析、支付等尚未实现的服务仍使用 `frontend/src/mock.ts`。
 
 ## 本地端口
 

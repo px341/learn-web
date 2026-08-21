@@ -62,7 +62,6 @@ a {
 }
 .primary,
 .secondary,
-.social,
 .filter-button,
 .select-button {
   border: 0;
@@ -207,6 +206,15 @@ a {
   display: grid;
   gap: 20px;
 }
+.form-error {
+  margin: 0;
+  color: #b42318;
+  font-size: 13px;
+}
+.auth-card button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
 .auth-card label,
 .upload-side label,
 .field-grid label,
@@ -237,48 +245,6 @@ a {
   border-color: #ab9bea;
   box-shadow: 0 0 0 3px #7658e814;
 }
-.form-meta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  color: var(--purple);
-  font-size: 12px;
-}
-.check {
-  display: flex !important;
-  align-items: center;
-  display: flex;
-  gap: 7px !important;
-  color: #777385 !important;
-  font-weight: 400 !important;
-}
-.check input {
-  accent-color: var(--purple);
-}
-.divider {
-  height: 30px;
-  border-bottom: 1px solid var(--line);
-  text-align: center;
-  margin-bottom: 26px;
-}
-.divider span {
-  background: #fff;
-  color: #aaa7b7;
-  padding: 0 13px;
-  position: relative;
-  top: 22px;
-  font-size: 12px;
-}
-.social {
-  background: #fff;
-  border: 1px solid var(--line);
-  color: #555264;
-  width: 100%;
-  font-weight: 500;
-}
-.social:first-letter {
-  color: #7658e8;
-}
 .auth-switch {
   text-align: center;
   color: #9693a5;
@@ -290,12 +256,6 @@ a {
 .more-link {
   color: var(--purple);
   font-weight: 700;
-}
-.demo-hint {
-  text-align: center;
-  color: #b1aebc;
-  font-size: 11px;
-  margin-top: 18px;
 }
 .terms-note {
   text-align: center;

@@ -18,4 +18,4 @@ export type MistakeAnalysis = {
   suggestion: string;
   answer: string;
 };
-export type User = { name: string; email: string; credits: number };
+export type User = { id: string; name: string; email: string; credits: number };

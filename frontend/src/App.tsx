@@ -27,6 +27,7 @@ import {
   WalletCards,
   X,
 } from "lucide-react";
+import { auth } from "./auth";
 import { api } from "./mock";
 import type { Mistake } from "./types";
 
@@ -44,8 +45,12 @@ function Logo() {
 }
 function Auth({ register = false }: { register?: boolean }) {
   const nav = useNavigate();
-  const [name, setName] = useState(register ? "" : "演示同学");
-  const [email, setEmail] = useState("demo@mistake.lab");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [passwordConfirmation, setPasswordConfirmation] = useState("");
+  const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
   return (
     <main className="auth-shell">
       <div className="auth-art">
@@ -87,74 +92,86 @@ function Auth({ register = false }: { register?: boolean }) {
           </p>
         </div>
         <form
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            if (register) api.register(name, email);
-            else api.login(email);
-            nav("/dashboard");
+            setError("");
+            setSubmitting(true);
+            try {
+              if (register) {
+                await auth.register(name, email, password, passwordConfirmation);
+              } else {
+                await auth.login(email, password);
+              }
+              nav("/dashboard");
+            } catch (cause) {
+              setError(cause instanceof Error ? cause.message : "请求失败，请稍后重试");
+            } finally {
+              setSubmitting(false);
+            }
           }}
         >
           {register && (
             <label>
               你的称呼
-              <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如：小林" />
+              <input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="例如：小林"
+                autoComplete="name"
+                required
+              />
             </label>
           )}
           <label>
-            邮箱或手机号
+            邮箱
             <input
+              type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
+              autoComplete="email"
+              required
             />
           </label>
           <label>
             密码
             <input
               type="password"
-              defaultValue="123456"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="请输入密码"
+              autoComplete={register ? "new-password" : "current-password"}
+              minLength={6}
+              maxLength={64}
+              required
             />
           </label>
           {register && (
             <label>
               确认密码
-              <input type="password" defaultValue="123456" />
+              <input
+                type="password"
+                value={passwordConfirmation}
+                onChange={(e) => setPasswordConfirmation(e.target.value)}
+                autoComplete="new-password"
+                minLength={6}
+                maxLength={64}
+                required
+              />
             </label>
           )}
-          {!register && (
-            <div className="form-meta">
-              <label className="check">
-                <input type="checkbox" defaultChecked /> 记住我
-              </label>
-              <a href="#">忘记密码？</a>
-            </div>
-          )}
-          <button className="primary wide" type="submit">
-            {register ? "创建账户" : "登录"} <ChevronRight size={17} />
+          {error && <p className="form-error" role="alert">{error}</p>}
+          <button className="primary wide" type="submit" disabled={submitting}>
+            {submitting ? "提交中…" : register ? "创建账户" : "登录"}{" "}
+            {!submitting && <ChevronRight size={17} />}
           </button>
         </form>
         {register && <p className="terms-note">注册即表示你同意错题实验室的服务条款与隐私政策。</p>}
-        <div className="divider">
-          <span>或者</span>
-        </div>
-        <button
-          className="social"
-          onClick={() => {
-            api.login("demo@mistake.lab");
-            nav("/dashboard");
-          }}
-        >
-          ◉ <span>使用演示账号继续</span>
-        </button>
         <p className="auth-switch">
           {register ? "已有账户？" : "还没有账户？"}{" "}
           <Link to={register ? "/login" : "/register"}>
             {register ? "立即登录" : "免费注册"}
           </Link>
-        </p>
-        <p className="demo-hint">
-          演示版无需真实注册，点击上方按钮即可体验完整流程
         </p>
       </div>
     </main>
@@ -164,7 +181,7 @@ function Auth({ register = false }: { register?: boolean }) {
 function Layout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
   const loc = useLocation();
-  const user = api.getState().user;
+  const user = auth.getUser();
   const items = [
     ["/dashboard", "总览", Home],
     ["/mistakes", "我的错题", BookOpen],
@@ -208,13 +225,13 @@ function Layout({ children }: { children: React.ReactNode }) {
         <div className="side-user">
           <div className="avatar">{user?.name?.[0]?.toUpperCase() || "D"}</div>
           <div className="user-copy">
-            <strong>{user?.name || "演示同学"}</strong>
-            <small>{user?.email || "demo@mistake.lab"}</small>
+            <strong>{user?.name || "同学"}</strong>
+            <small>{user?.email || ""}</small>
           </div>
           <button
             className="ghost icon-button"
             onClick={() => {
-              api.logout();
+              auth.logout();
               window.location.href = "/login";
             }}
           >
@@ -258,7 +275,7 @@ function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 function Guard({ children }: { children: React.ReactNode }) {
-  return api.getState().user ? (
+  return auth.getUser() ? (
     <Layout>{children}</Layout>
   ) : (
     <Navigate to="/login" replace />
@@ -306,7 +323,7 @@ function Dashboard() {
     <>
       <PageTitle
         eyebrow="MONDAY, 18 AUGUST 2026"
-        title="早上好，{api.getState().user?.name || '同学'} 👋"
+        title={`早上好，${auth.getUser()?.name || "同学"} 👋`}
         action={
           <Link to="/mistakes/upload" className="primary">
             <Plus size={17} /> 上传新错题
@@ -567,7 +584,7 @@ function UploadPage() {
   const [type, setType] = useState("概念不清");
   const [text, setText] = useState("");
   const [image, setImage] = useState<string>();
-  const user = api.getState().user;
+  const user = auth.getUser();
   const onFile = (file?: File) => {
     if (!file) return;
     if (file.size > 10 * 1024 * 1024) {
@@ -935,7 +952,7 @@ function PaymentResult() {
   );
 }
 function Profile() {
-  const user = api.getState().user!;
+  const user = auth.getUser()!;
   return (
     <>
       <PageTitle eyebrow="ACCOUNT" title="个人设置" />
@@ -948,7 +965,7 @@ function Profile() {
         <button
           className="secondary"
           onClick={() => {
-            api.logout();
+            auth.logout();
             window.location.href = "/login";
           }}
         >

@@ -1,4 +1,5 @@
-import type { Mistake, MistakeAnalysis, User } from "./types";
+import { auth } from "./auth";
+import type { Mistake } from "./types";
 
 const seed: Mistake[] = [
   {
@@ -77,39 +78,21 @@ const seed: Mistake[] = [
 ];
 
 const key = "mistake-lab-state";
-type State = { user: User | null; mistakes: Mistake[] };
+type State = { mistakes: Mistake[] };
 const load = (): State => {
   try {
-    return JSON.parse(localStorage.getItem(key) || "");
+    const stored = JSON.parse(localStorage.getItem(key) || "");
+    return { mistakes: stored.mistakes || seed };
   } catch {
-    return { user: null, mistakes: seed };
+    return { mistakes: seed };
   }
 };
 let state = load();
 const persist = () => localStorage.setItem(key, JSON.stringify(state));
 export const api = {
-  getState: () => state,
-  login: (email: string) => {
-    state.user = {
-      name: email.split("@")[0] || "同学",
-      email,
-      credits: state.user?.credits ?? 3,
-    };
-    persist();
-    return state.user;
-  },
-  register: (name: string, email: string) => {
-    state.user = { name: name.trim() || email.split("@")[0] || "同学", email, credits: 3 };
-    persist();
-    return state.user;
-  },
-  logout: () => {
-    state.user = null;
-    persist();
-  },
   addCredits: (amount: number) => {
-    if (state.user) state.user.credits += amount;
-    persist();
+    const user = auth.getUser();
+    if (user) auth.updateCredits(user.credits + amount);
   },
   listMistakes: () => state.mistakes,
   submit: (payload: {
@@ -127,7 +110,8 @@ export const api = {
       accuracy: 0,
     };
     state.mistakes = [item, ...state.mistakes];
-    if (state.user) state.user.credits -= 1;
+    const user = auth.getUser();
+    if (user) auth.updateCredits(user.credits - 1);
     persist();
     window.setTimeout(() => {
       item.status = "analyzing";
