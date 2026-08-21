@@ -1,0 +1,63 @@
+package com.learn.auth.exception;
+
+import com.learn.common.vo.ErrorVO;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+/**
+ * 将认证领域异常和参数校验异常转换成稳定的 API 错误结构。
+ *
+ * <p>登录失败统一返回“邮箱或密码错误”，避免向客户端泄露账号是否存在。</p>
+ */
+@RestControllerAdvice
+public class AuthExceptionHandler {
+
+    /** 登录邮箱不存在、密码错误或账号不可用时统一返回 401。 */
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<ErrorVO> handleBadCredentials() {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorVO.of("INVALID_CREDENTIALS", "邮箱或密码错误"));
+    }
+
+    /** 邮箱唯一约束冲突时返回 409。 */
+    @ExceptionHandler(EmailAlreadyRegisteredException.class)
+    public ResponseEntity<ErrorVO> handleEmailAlreadyRegistered(
+            EmailAlreadyRegisteredException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorVO.of("EMAIL_ALREADY_REGISTERED", exception.getMessage()));
+    }
+
+    /** 两次密码不一致时返回字段级校验错误。 */
+    @ExceptionHandler(PasswordConfirmationMismatchException.class)
+    public ResponseEntity<ErrorVO> handlePasswordConfirmationMismatch(
+            PasswordConfirmationMismatchException exception
+    ) {
+        return ResponseEntity.badRequest().body(new ErrorVO(
+                "VALIDATION_ERROR",
+                "请求参数校验失败",
+                Map.of("passwordConfirmation", exception.getMessage())
+        ));
+    }
+
+    /** 汇总 Bean Validation 产生的字段错误。 */
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<ErrorVO> handleValidation(MethodArgumentNotValidException exception) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        exception.getBindingResult().getFieldErrors().forEach(error ->
+                fieldErrors.putIfAbsent(error.getField(), error.getDefaultMessage()));
+
+        return ResponseEntity.badRequest().body(new ErrorVO(
+                "VALIDATION_ERROR",
+                "请求参数校验失败",
+                fieldErrors
+        ));
+    }
+}

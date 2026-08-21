@@ -1,5 +1,7 @@
 package com.learn.gateway.config;
 
+import com.learn.security.currentuser.ReactiveCurrentUserProvider;
+import com.learn.security.currentuser.ReactiveSecurityContextCurrentUserProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +33,14 @@ public class GatewaySecurityConfiguration {
     private static final int MINIMUM_HS256_SECRET_BYTES = 32;
 
     /**
+     * 提供适用于 WebFlux/Reactor Context 的当前用户读取器。
+     */
+    @Bean
+    public ReactiveCurrentUserProvider reactiveCurrentUserProvider() {
+        return new ReactiveSecurityContextCurrentUserProvider();
+    }
+
+    /**
      * 配置响应式安全过滤链。
      *
      * <p>Gateway 面向无状态 REST API，因此关闭表单登录、HTTP Basic 和 CSRF；
@@ -52,6 +62,9 @@ public class GatewaySecurityConfiguration {
                         .pathMatchers("/api/auth/login", "/api/auth/register").permitAll()
                         // 健康检查供 Docker、Nginx 或运维平台探测服务状态。
                         .pathMatchers("/actuator/health", "/actuator/info").permitAll()
+                        // Swagger UI 及聚合后的 OpenAPI 文档仅在启用时公开。
+                        .pathMatchers("/swagger-ui.html", "/swagger-ui/**", "/webjars/**",
+                                "/v3/api-docs/**").permitAll()
                         // 未明确公开的接口默认都需要通过 JWT 校验。
                         .anyExchange().authenticated())
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(Customizer.withDefaults()))

@@ -17,6 +17,13 @@ spring:
       server:
         webflux:
           routes:
+            # 将统一文档地址改写为 Auth Service 自己的 OpenAPI 文档地址。
+            - id: auth-service-openapi
+              uri: lb://auth-service
+              predicates:
+                - Path=/v3/api-docs/auth-service
+              filters:
+                - SetPath=/v3/api-docs
             - id: auth-service
               uri: lb://auth-service
               predicates:
@@ -33,6 +40,18 @@ security:
   jwt:
     # 本地开发默认值；共享环境必须通过 JWT_SECRET 注入至少 32 字节的随机密钥。
     secret: ${JWT_SECRET:change-this-dev-secret-key-at-least-32-bytes}
+
+springdoc:
+  # Swagger UI 的自动配置依赖该开关；页面只展示下方显式配置的微服务文档。
+  api-docs:
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: ${SWAGGER_ENABLED:true}
+    try-it-out-enabled: true
+    urls:
+      - name: auth-service
+        url: /v3/api-docs/auth-service
 
 management:
   endpoints:

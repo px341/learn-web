@@ -33,13 +33,14 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: app
+      POSTGRES_DB: learn
     ports:
       - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      - ./sql_table:/docker-entrypoint-initdb.d:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d app"]
+      test: ["CMD-SHELL", "pg_isready -U postgres -d learn"]
       interval: 5s
       timeout: 5s
       retries: 10
@@ -82,6 +83,8 @@ services:
     container_name: nginx
     restart: unless-stopped
     ports:
+      # hosts 文件不能映射端口；80 用于无端口域名访问，18080 保留作备用入口。
+      - "80:80"
       - "18080:80"
     volumes:
       - ./deploy/nginx/nginx.conf:/etc/nginx/nginx.conf:ro

@@ -146,17 +146,24 @@ RegisterRequestDTO ─┘                         ├─ token
 | `email` | `String` | string | 是 | 用户邮箱 |
 | `credits` | `Integer` | number | 是 | 剩余可用分析次数；新用户默认为 3 |
 
-认证相关 Java 对象建议放置位置：
+公共响应对象放在 `common-model`，认证业务自己的 DTO、VO 仍放在 `auth-service`：
 
 ```text
-auth-service/src/main/java/com/learn/auth/
-├── dto/
-│   ├── LoginRequestDTO.java
-│   └── RegisterRequestDTO.java
-└── vo/
-    ├── AuthVO.java
-    ├── UserVO.java
-    └── ErrorVO.java
+backend/
+├── common-model/src/main/java/com/learn/common/
+│   ├── dto/PageQueryDTO.java
+│   ├── entity/BaseEntity.java
+│   └── vo/
+│       ├── ApiResponse.java
+│       ├── ErrorVO.java
+│       └── PageVO.java
+└── auth-service/src/main/java/com/learn/auth/
+    ├── dto/
+    │   ├── LoginRequestDTO.java
+    │   └── RegisterRequestDTO.java
+    └── vo/
+        ├── AuthVO.java
+        └── UserVO.java
 ```
 
 ## 用户与额度

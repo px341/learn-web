@@ -13,7 +13,17 @@
     <name>gateway</name>
     <description>API gateway for learn-web</description>
 
+    <properties>
+        <maven.compiler.source>21</maven.compiler.source>
+        <maven.compiler.target>21</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
     <dependencies>
+        <dependency>
+            <groupId>com.learn</groupId>
+            <artifactId>common-security</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
@@ -45,6 +55,13 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <!-- Gateway 提供统一 Swagger UI，各微服务只暴露自己的 OpenAPI JSON。 -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
+            <!-- 2.8.15+ 存在 Swagger UI PathPattern 回归，暂时固定为已验证版本。 -->
+            <version>2.8.14</version>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>

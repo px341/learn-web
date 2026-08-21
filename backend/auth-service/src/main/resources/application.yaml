@@ -4,7 +4,30 @@ server:
 spring:
   application:
     name: auth-service
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:learn}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
   cloud:
     nacos:
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+
+mybatis:
+  mapper-locations: classpath:/mapper/*.xml
+  type-handlers-package: com.learn.auth.mybatis
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:change-this-dev-secret-key-at-least-32-bytes}
+    access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+    enabled: ${SWAGGER_ENABLED:true}
+  swagger-ui:
+    path: /swagger-ui.html
+    enabled: ${SWAGGER_ENABLED:true}
+    try-it-out-enabled: true
