@@ -12,6 +12,13 @@ import java.util.UUID;
  */
 public final class SecurityContextCurrentUserProvider implements CurrentUserProvider {
 
+    /**
+     * 从当前线程绑定的 SecurityContext 中解析用户 UUID。
+     *
+     * @return 当前 JWT subject 对应的用户 UUID
+     * @throws org.springframework.security.authentication.AuthenticationCredentialsNotFoundException
+     *         当前线程没有有效认证，或 subject 不是合法 UUID 时抛出
+     */
     @Override
     public UUID getUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
