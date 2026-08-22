@@ -128,3 +128,7 @@ deploy/*
 !deploy/nginx/
 deploy/nginx/*
 !deploy/nginx/nginx.conf
+!deploy/garage/
+deploy/garage/*
+!deploy/garage/garage.toml
+*tjxuetang*

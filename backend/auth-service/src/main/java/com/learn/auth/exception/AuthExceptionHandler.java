@@ -19,6 +19,15 @@ import java.util.Map;
 @RestControllerAdvice
 public class AuthExceptionHandler {
 
+    /** JWT 合法但对应账号已不存在或被禁用时，要求客户端清理当前会话。 */
+    @ExceptionHandler(CurrentUserUnavailableException.class)
+    public ResponseEntity<ErrorVO> handleCurrentUserUnavailable(
+            CurrentUserUnavailableException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ErrorVO.of("INVALID_SESSION", exception.getMessage()));
+    }
+
     /** 登录邮箱不存在、密码错误或账号不可用时统一返回 401。 */
     @ExceptionHandler(BadCredentialsException.class)
     public ResponseEntity<ErrorVO> handleBadCredentials() {

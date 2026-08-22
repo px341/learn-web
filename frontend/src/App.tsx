@@ -180,8 +180,17 @@ function Auth({ register = false }: { register?: boolean }) {
 
 function Layout({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const [user, setUser] = useState(auth.getUser());
   const loc = useLocation();
-  const user = auth.getUser();
+  useEffect(() => {
+    auth.refreshUser()
+      .then(setUser)
+      .catch(() => {
+        if (!auth.getUser()) {
+          window.location.href = "/login";
+        }
+      });
+  }, []);
   const items = [
     ["/dashboard", "总览", Home],
     ["/mistakes", "我的错题", BookOpen],

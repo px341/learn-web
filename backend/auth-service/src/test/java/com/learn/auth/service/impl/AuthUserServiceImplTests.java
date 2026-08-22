@@ -3,6 +3,7 @@ package com.learn.auth.service.impl;
 import com.learn.auth.dto.AuthDTO;
 import com.learn.auth.dto.RegisterRequestDTO;
 import com.learn.auth.entity.UserEntity;
+import com.learn.auth.exception.CurrentUserUnavailableException;
 import com.learn.auth.exception.PasswordConfirmationMismatchException;
 import com.learn.auth.mapper.UserMapper;
 import com.learn.auth.service.JwtTokenService;
@@ -85,6 +86,26 @@ class AuthUserServiceImplTests {
         ))).isInstanceOf(PasswordConfirmationMismatchException.class);
     }
 
+    @Test
+    void currentUserIsLoadedByJwtSubjectId() {
+        InMemoryUserMapper mapper = new InMemoryUserMapper();
+        UserEntity user = activeUser("demo@example.com", passwordEncoder.encode("123456"));
+        mapper.users.put(user.getEmail(), user);
+        AuthUserServiceImpl service = service(mapper);
+
+        assertThat(service.authUserMe(user.getId()))
+                .extracting("id", "email", "credits")
+                .containsExactly(user.getId(), "demo@example.com", 3);
+    }
+
+    @Test
+    void currentUserRejectsUnknownJwtSubjectId() {
+        AuthUserServiceImpl service = service(new InMemoryUserMapper());
+
+        assertThatThrownBy(() -> service.authUserMe(UUID.randomUUID()))
+                .isInstanceOf(CurrentUserUnavailableException.class);
+    }
+
     private AuthUserServiceImpl service(UserMapper mapper) {
         byte[] keyBytes = "test-secret-key-that-is-at-least-32-bytes-long"
                 .getBytes(StandardCharsets.UTF_8);
@@ -114,6 +135,13 @@ class AuthUserServiceImplTests {
         @Override
         public Optional<UserEntity> selectByEmail(String email) {
             return Optional.ofNullable(users.get(email));
+        }
+
+        @Override
+        public Optional<UserEntity> selectById(UUID id) {
+            return users.values().stream()
+                    .filter(user -> id.equals(user.getId()))
+                    .findFirst();
         }
 
         @Override

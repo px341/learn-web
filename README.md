@@ -20,13 +20,14 @@ API 对接契约见 [API.md](./API.md)。前端登录和注册已接入真实 AP
 | `18083` | Nacos Console | 本地 Nacos 管理页面 |
 | `8848` | Nacos Server | Java 客户端注册与发现端口 |
 | `9848` | Nacos gRPC | Nacos 客户端通信端口，由 Nacos 协议固定使用 |
+| `3900` | Garage S3 API | 错题图片对象存储，仅监听本机 |
 
 `8848` 和 `9848` 保留 Nacos 标准端口，是因为 Nacos 客户端会根据主端口自动计算 gRPC 端口，不能与应用端口一起简单顺延。
 
 ## 本地启动顺序
 
 ```bash
-# 1. 启动 Nacos、PostgreSQL、Redis、RabbitMQ 和 Nginx
+# 1. 启动 Nacos、PostgreSQL、Redis、RabbitMQ、Garage 和 Nginx
 docker compose up -d
 
 # 2. 启动 Auth Service（完成启动类和登录注册代码后）
@@ -46,12 +47,35 @@ mvn -f backend/pom.xml -pl gateway spring-boot:run
 
 Gateway 本地默认连接 `localhost:8848` 的 Nacos 和 `localhost:6379` 的 Redis。Auth Service 本地默认使用 `postgres/postgres` 连接 `localhost:5432` 的 `learn` 数据库，可通过 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USERNAME` 和 `DB_PASSWORD` 覆盖。非本地环境还需注入至少 32 字节的 `JWT_SECRET`；Auth Service 签发 JWT 时必须使用与 Gateway 相同的 `JWT_SECRET`。
 
+## 本地对象存储
+
+Compose 使用 Garage `v2.3.0` 提供 S3 兼容对象存储，首次启动时自动创建私有 Bucket `mistake-images`。宿主机上运行的 Java 服务使用以下开发配置：
+
+```yaml
+app:
+  storage:
+    endpoint: http://localhost:3900
+    region: garage
+    bucket: mistake-images
+    access-key: GK0123456789abcdef0123456789abcdef
+    secret-key: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    path-style-access: true
+```
+
+如果 Java 服务也运行在同一个 Compose 网络，将 `endpoint` 改为 `http://garage:3900`。开发凭据明文保存在 Compose 中，只允许用于本地环境；生产环境需要通过 Secret 注入。对象数据持久化在 `garage-data` Volume，普通的 `docker compose down` 不会删除它。
+
 ## 数据库表结构
 
 可复现的 PostgreSQL 建表脚本统一存放在 `sql_table/`。全新 PostgreSQL 数据卷首次启动时，Compose 会自动执行该目录中的 SQL。
+
+| 脚本 | 表 | 说明 |
+| --- | --- | --- |
+| `001_create_users.sql` | `users` | 用户、额度和认证状态 |
+| `002_create_questions.sql` | `official_questions`、`personal_questions` | 官方题与个人题；个人题可选择性匹配官方题 |
 
 已有数据卷不会再次执行 Docker 初始化脚本，可手动导入：
 
 ```bash
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/001_create_users.sql
+docker compose exec -T postgres psql -U postgres -d learn < sql_table/002_create_questions.sql
 ```

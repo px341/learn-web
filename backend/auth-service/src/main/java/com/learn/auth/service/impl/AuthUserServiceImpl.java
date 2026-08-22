@@ -3,6 +3,7 @@ package com.learn.auth.service.impl;
 import com.learn.auth.dto.AuthDTO;
 import com.learn.auth.dto.RegisterRequestDTO;
 import com.learn.auth.entity.UserEntity;
+import com.learn.auth.exception.CurrentUserUnavailableException;
 import com.learn.auth.exception.EmailAlreadyRegisteredException;
 import com.learn.auth.exception.PasswordConfirmationMismatchException;
 import com.learn.auth.mapper.UserMapper;
@@ -85,16 +86,27 @@ public class AuthUserServiceImpl implements AuthUserService {
         return createAuthVO(user);
     }
 
+    @Override
+    public UserVO authUserMe(UUID userId) {
+        UserEntity user = userMapper.selectById(userId)
+                .filter(candidate -> ACTIVE_STATUS.equals(candidate.getStatus()))
+                .orElseThrow(CurrentUserUnavailableException::new);
+        return toUserVO(user);
+    }
+
     private AuthVO createAuthVO(UserEntity user) {
         // UserVO 是允许返回给前端的字段白名单，不暴露 passwordHash 等内部字段。
         String token = jwtTokenService.createAccessToken(user);
-        UserVO userVO = new UserVO(
+        return new AuthVO(token, toUserVO(user));
+    }
+
+    private static UserVO toUserVO(UserEntity user) {
+        return new UserVO(
                 user.getId(),
                 user.getName(),
                 user.getEmail(),
                 user.getCredits()
         );
-        return new AuthVO(token, userVO);
     }
 
     private static String normalizeEmail(String email) {

@@ -39,6 +39,22 @@
         LIMIT 1
     </select>
 
+    <select id="selectById" resultMap="userEntityResultMap">
+        SELECT id,
+               name,
+               email,
+               password_hash,
+               credits,
+               status,
+               token_version,
+               email_verified_at,
+               created_at,
+               updated_at
+        FROM users
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
     <insert id="insert" parameterType="com.learn.auth.entity.UserEntity">
         INSERT INTO users (
             id,

@@ -4,11 +4,15 @@ import com.learn.auth.dto.AuthDTO;
 import com.learn.auth.dto.RegisterRequestDTO;
 import com.learn.auth.service.AuthUserService;
 import com.learn.auth.vo.AuthVO;
+import com.learn.auth.vo.UserVO;
 import com.learn.common.vo.ApiResponse;
+import com.learn.security.currentuser.CurrentUserProvider;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,6 +30,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthUserController {
 
     private final AuthUserService authUserService;
+    private final CurrentUserProvider currentUserProvider;
 
     /**
      * 校验用户凭证并返回 Access Token 和公开用户信息。
@@ -47,5 +52,16 @@ public class AuthUserController {
     ) {
         AuthVO authVO = authUserService.authUserRegister(registerRequest);
         return ApiResponse.success(authVO);
+    }
+
+    /**
+     * 根据已验证 JWT 的 subject 查询当前用户，不接收客户端提交的用户 ID 或密码。
+     */
+    @Operation(summary = "查询当前用户", description = "从 Bearer JWT 读取用户 UUID 并返回最新用户信息")
+    @GetMapping("/me")
+    @SecurityRequirement(name = "bearerAuth")
+    public ApiResponse<UserVO> authUserMe() {
+        UserVO userVO = authUserService.authUserMe(currentUserProvider.getUserId());
+        return ApiResponse.success(userVO);
     }
 }

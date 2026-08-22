@@ -78,6 +78,29 @@ services:
       timeout: 5s
       retries: 10
 
+  garage:
+    image: dxflrs/garage:v2.3.0
+    container_name: garage
+    restart: unless-stopped
+    command: /garage server --single-node --default-bucket
+    environment:
+      # 仅供本地开发使用；生产环境必须通过 Secret 注入独立凭据。
+      GARAGE_DEFAULT_ACCESS_KEY: GK0123456789abcdef0123456789abcdef
+      GARAGE_DEFAULT_SECRET_KEY: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+      GARAGE_DEFAULT_BUCKET: mistake-images
+    ports:
+      # S3 兼容 API。限制在本机，避免开发凭据暴露到局域网。
+      - "127.0.0.1:3900:3900"
+    volumes:
+      - ./deploy/garage/garage.toml:/etc/garage.toml:ro
+      - garage-data:/var/lib/garage
+    healthcheck:
+      test: ["CMD", "/garage", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   nginx:
     image: nginx:stable
     container_name: nginx
@@ -102,3 +125,4 @@ volumes:
   postgres-data:
   redis-data:
   rabbitmq-data:
+  garage-data:
