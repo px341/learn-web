@@ -35,6 +35,7 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
@@ -116,14 +117,17 @@ public class AuthUserServiceImpl implements AuthUserService {
     @Override
     @Transactional
     public UserVO authUserUpdateMe(UpdateCurrentUserDTO userDTO) {
+        // 邮箱或者用户名必须有个不是空的
         if (userDTO.email() == null && userDTO.name() == null) {
             throw new InvalidProfileUpdateException("至少提供 name 或 email");
         }
 
+        // 获取当前用户的情况及处理用户输入
         UserEntity user = getCurrentActiveUser();
         String name = normalizeName(userDTO.name());
         String email = userDTO.email() == null ? null : normalizeProfileEmail(userDTO.email());
 
+        // 检查邮箱是否被使用了
         if (email != null) {
             userMapper.selectByEmail(email)
                     .filter(existing -> !existing.getId().equals(user.getId()))
@@ -132,15 +136,19 @@ public class AuthUserServiceImpl implements AuthUserService {
                     });
         }
 
-        UpdateCurrentUserDTO normalizedRequest = new UpdateCurrentUserDTO(name, email);
-        try {
-            int updatedRows = userMapper.updateUserInfoById(normalizedRequest, user.getId());
-            if (updatedRows != 1) {
-                throw new CurrentUserUnavailableException();
+        // 要求name、email必须不同
+        if (!(Objects.equals(user.getEmail(), email) && Objects.equals(user.getName(), name))) {
+            // 规范化DTO重新处理
+            UpdateCurrentUserDTO normalizedRequest = new UpdateCurrentUserDTO(name, email);
+            try {
+                int updatedRows = userMapper.updateUserInfoById(normalizedRequest, user.getId());
+                if (updatedRows != 1) {
+                    throw new CurrentUserUnavailableException();
+                }
+            } catch (DuplicateKeyException exception) {
+                // 唯一索引兜底处理两个用户并发修改为同一邮箱的竞争条件。
+                throw new EmailAlreadyRegisteredException();
             }
-        } catch (DuplicateKeyException exception) {
-            // 唯一索引兜底处理两个用户并发修改为同一邮箱的竞争条件。
-            throw new EmailAlreadyRegisteredException();
         }
 
         if (name != null) {
