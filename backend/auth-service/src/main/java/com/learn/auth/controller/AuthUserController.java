@@ -15,9 +15,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.MediaType;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 认证入口，负责接收并校验登录、注册请求。
@@ -74,6 +78,17 @@ public class AuthUserController {
     public ApiResponse<UserVO> authUserUpdateMe(
             @Valid @RequestBody UpdateCurrentUserDTO updateCurrentUserDTO) {
         UserVO userVO = authUserService.authUserUpdateMe(updateCurrentUserDTO);
+        return ApiResponse.success(userVO);
+    }
+
+    /** 替换当前登录用户的头像。 */
+    @Operation(summary = "个人头像修改", description = "修改个人头像")
+    @PutMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @SecurityRequirement(name = "bearerAuth")
+    public ApiResponse<UserVO> authUserUpdateAvatar(
+            @RequestPart("avatar") MultipartFile avatar
+    ) {
+        UserVO userVO = authUserService.authUserUpdateAvatar(avatar);
         return ApiResponse.success(userVO);
     }
 }

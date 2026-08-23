@@ -20,6 +20,13 @@ public class UserEntity {
     private String status;
     private Integer tokenVersion;
     private Instant emailVerifiedAt;
+    private String avatarBucket;
+    private String avatarObjectKey;
+    private String avatarOriginalName;
+    private String avatarContentType;
+    private Long avatarSize;
+    private String avatarSha256;
+    private Instant avatarUpdatedAt;
     private Instant createdAt;
     private Instant updatedAt;
 }

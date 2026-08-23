@@ -7,6 +7,7 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -18,6 +19,27 @@ import java.util.Map;
  */
 @RestControllerAdvice
 public class AuthExceptionHandler {
+
+    /** 头像内容或大小不符合约束时返回 400。 */
+    @ExceptionHandler(InvalidAvatarException.class)
+    public ResponseEntity<ErrorVO> handleInvalidAvatar(InvalidAvatarException exception) {
+        return ResponseEntity.badRequest()
+                .body(ErrorVO.of("INVALID_AVATAR", exception.getMessage()));
+    }
+
+    /** multipart 在进入 Controller 前超过配置上限时返回稳定错误。 */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<ErrorVO> handleAvatarTooLarge() {
+        return ResponseEntity.badRequest()
+                .body(ErrorVO.of("INVALID_AVATAR", "头像不能超过 5MB"));
+    }
+
+    /** Garage 不可用时不把 SDK 或连接细节暴露给客户端。 */
+    @ExceptionHandler(AvatarStorageException.class)
+    public ResponseEntity<ErrorVO> handleAvatarStorage() {
+        return ResponseEntity.status(HttpStatus.BAD_GATEWAY)
+                .body(ErrorVO.of("AVATAR_STORAGE_UNAVAILABLE", "头像存储服务暂时不可用"));
+    }
 
     /** 用户资料修改请求没有有效字段时返回 400。 */
     @ExceptionHandler(InvalidProfileUpdateException.class)

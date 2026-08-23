@@ -1,14 +1,18 @@
 package com.learn.auth.service.impl;
 
+import com.learn.auth.config.S3StorageProperties;
 import com.learn.auth.dto.AuthDTO;
 import com.learn.auth.dto.RegisterRequestDTO;
 import com.learn.auth.dto.UpdateCurrentUserDTO;
 import com.learn.auth.entity.UserEntity;
 import com.learn.auth.exception.CurrentUserUnavailableException;
 import com.learn.auth.exception.EmailAlreadyRegisteredException;
+import com.learn.auth.exception.InvalidAvatarException;
 import com.learn.auth.exception.InvalidProfileUpdateException;
 import com.learn.auth.exception.PasswordConfirmationMismatchException;
 import com.learn.auth.mapper.UserMapper;
+import com.learn.auth.model.AvatarMetadata;
+import com.learn.auth.service.AvatarStorageService;
 import com.learn.auth.service.JwtTokenService;
 import com.learn.auth.vo.AuthVO;
 import com.learn.security.currentuser.CurrentUserProvider;
@@ -18,8 +22,10 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.nio.charset.StandardCharsets;
+import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
@@ -158,6 +164,46 @@ class AuthUserServiceImplTests {
         )).isInstanceOf(EmailAlreadyRegisteredException.class);
     }
 
+    @Test
+    void currentUserAvatarUsesDetectedContentTypeAndReturnsReadUrl() {
+        InMemoryUserMapper mapper = new InMemoryUserMapper();
+        UserEntity user = activeUser("demo@example.com", passwordEncoder.encode("123456"));
+        mapper.users.put(user.getEmail(), user);
+        AuthUserServiceImpl service = service(mapper, user.getId());
+        byte[] pngHeader = new byte[]{
+                (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A
+        };
+
+        var result = service.authUserUpdateAvatar(new MockMultipartFile(
+                "avatar",
+                "avatar.txt",
+                "text/plain",
+                pngHeader
+        ));
+
+        assertThat(user.getAvatarContentType()).isEqualTo("image/png");
+        assertThat(user.getAvatarObjectKey())
+                .startsWith("users/" + user.getId() + "/avatars/")
+                .endsWith(".png");
+        assertThat(user.getAvatarSha256()).matches("[0-9a-f]{64}");
+        assertThat(result.avatarUrl()).contains(user.getAvatarObjectKey());
+    }
+
+    @Test
+    void currentUserAvatarRejectsSpoofedContentType() {
+        InMemoryUserMapper mapper = new InMemoryUserMapper();
+        UserEntity user = activeUser("demo@example.com", passwordEncoder.encode("123456"));
+        mapper.users.put(user.getEmail(), user);
+        AuthUserServiceImpl service = service(mapper, user.getId());
+
+        assertThatThrownBy(() -> service.authUserUpdateAvatar(new MockMultipartFile(
+                "avatar",
+                "avatar.png",
+                "image/png",
+                "not an image".getBytes(StandardCharsets.UTF_8)
+        ))).isInstanceOf(InvalidAvatarException.class);
+    }
+
     private AuthUserServiceImpl service(UserMapper mapper) {
         return service(mapper, UUID.randomUUID());
     }
@@ -174,7 +220,18 @@ class AuthUserServiceImplTests {
                 mapper,
                 passwordEncoder,
                 tokenService,
-                currentUserProvider
+                currentUserProvider,
+                new NoOpAvatarStorageService(),
+                new S3StorageProperties(
+                        URI.create("http://localhost:3900"),
+                        URI.create("http://localhost:3900"),
+                        "garage",
+                        "mistake-images",
+                        "access-key",
+                        "secret-key",
+                        true,
+                        Duration.ofMinutes(15)
+                )
         );
     }
 
@@ -236,6 +293,42 @@ class AuthUserServiceImplTests {
                 user.setName(userDTO.name());
             }
             return 1;
+        }
+
+        @Override
+        public int updateAvatarById(AvatarMetadata avatar, UUID id) {
+            UserEntity user = users.values().stream()
+                    .filter(candidate -> id.equals(candidate.getId()))
+                    .filter(candidate -> "ACTIVE".equals(candidate.getStatus()))
+                    .findFirst()
+                    .orElse(null);
+            if (user == null) {
+                return 0;
+            }
+            user.setAvatarBucket(avatar.bucket());
+            user.setAvatarObjectKey(avatar.objectKey());
+            user.setAvatarOriginalName(avatar.originalName());
+            user.setAvatarContentType(avatar.contentType());
+            user.setAvatarSize(avatar.size());
+            user.setAvatarSha256(avatar.sha256());
+            user.setAvatarUpdatedAt(avatar.updatedAt());
+            return 1;
+        }
+    }
+
+    private static final class NoOpAvatarStorageService implements AvatarStorageService {
+
+        @Override
+        public void put(String bucket, String objectKey, String contentType, byte[] content) {
+        }
+
+        @Override
+        public void delete(String bucket, String objectKey) {
+        }
+
+        @Override
+        public String createReadUrl(String bucket, String objectKey) {
+            return "http://localhost:3900/" + bucket + "/" + objectKey;
         }
     }
 }

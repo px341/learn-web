@@ -5,6 +5,7 @@ import com.learn.auth.dto.RegisterRequestDTO;
 import com.learn.auth.dto.UpdateCurrentUserDTO;
 import com.learn.auth.vo.AuthVO;
 import com.learn.auth.vo.UserVO;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 用户认证用例，包括登录和注册。
@@ -30,4 +31,9 @@ public interface AuthUserService {
      * 修改当前用户提交的资料字段并返回最新公开信息。
      */
     UserVO authUserUpdateMe(UpdateCurrentUserDTO userDTO);
+
+    /**
+     * 校验并替换当前用户头像，返回包含短期访问地址的最新用户信息。
+     */
+    UserVO authUserUpdateAvatar(MultipartFile avatar);
 }

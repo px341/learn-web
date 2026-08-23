@@ -2,6 +2,7 @@ package com.learn.auth.mapper;
 
 import com.learn.auth.dto.UpdateCurrentUserDTO;
 import com.learn.auth.entity.UserEntity;
+import com.learn.auth.model.AvatarMetadata;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -36,6 +37,12 @@ public interface UserMapper {
      */
     int updateUserInfoById(
             @Param("userDTO") UpdateCurrentUserDTO userDTO,
+            @Param("id") UUID id
+    );
+
+    /** 使用一次 UPDATE 原子替换当前头像的全部对象元数据。 */
+    int updateAvatarById(
+            @Param("avatar") AvatarMetadata avatar,
             @Param("id") UUID id
     );
 }

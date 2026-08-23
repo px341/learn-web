@@ -9,6 +9,7 @@ public record UserVO(
         UUID id,
         String name,
         String email,
-        Integer credits
+        Integer credits,
+        String avatarUrl
 ) {
 }
