@@ -9,6 +9,7 @@
 | 登录、注册 | 已调用真实 API | Auth Service 已实现，Gateway 已路由 | 保持现状 |
 | 当前用户查询 | 启动受保护页面时调用真实 API，并刷新登录缓存 | Auth Service 已实现 `GET /api/auth/me` | 保持现状 |
 | 资料修改 | 保存按钮无请求 | 未实现 | 后续实现 `PATCH /api/auth/me` |
+| 用户头像 | 已完成选择、预览和 `PUT /api/auth/me/avatar` 请求 | 数据表已设计，上传接口未实现 | Auth Service 接入 Garage 并生成预签名 URL |
 | Dashboard | 从错题 Mock 计算，趋势和部分统计为硬编码 | 未实现 | 实现统计接口 |
 | 错题列表、详情、上传 | 使用 `localStorage` Mock，图片保存为 Base64 | 未实现 | 新建 Mistake Service 并接入 Garage |
 | 分析进度 | 前端定时器模拟状态变化 | 未实现 | 前端轮询详情接口，后端异步分析 |
@@ -163,6 +164,7 @@ RegisterRequestDTO ─┘                         ├─ token
 | `name` | `String` | string | 是 | 用户显示名称 |
 | `email` | `String` | string | 是 | 用户邮箱 |
 | `credits` | `Integer` | number | 是 | 剩余可用分析次数；新用户默认为 3 |
+| `avatarUrl` | `String` | string/null | 否 | Garage 私有对象生成的短期预签名 URL；没有头像时为 `null` |
 
 公共响应对象放在 `common-model`，认证业务自己的 DTO、VO 仍放在 `auth-service`：
 
@@ -198,7 +200,8 @@ backend/
     "id": "95ee826a-6c69-4544-b30c-94f7fe49df24",
     "name": "小林",
     "email": "xiaolin@example.com",
-    "credits": 3
+    "credits": 3,
+    "avatarUrl": "http://localhost:3900/mistake-images/...?X-Amz-Signature=..."
   }
 }
 ```
@@ -223,6 +226,31 @@ backend/
 - 成功响应为更新后的 `ApiResponse<UserVO>`。
 
 当前阶段不再单独设计 `/api/entitlements`：`GET /api/auth/me` 已返回 `credits`，创建错题和支付响应还会返回最新的 `creditsRemaining`。额度以服务端为唯一事实来源，前端不得自行计算最终额度。
+
+### `PUT /api/auth/me/avatar`
+
+替换当前用户头像。请求类型为 `multipart/form-data`，文件字段名为 `avatar`。
+
+- 用户 UUID 从 JWT subject 获取，客户端不提交用户 ID。
+- 支持 PNG、JPEG、WEBP，最大 5MB；后端必须检查文件真实内容。
+- 图片写入 Garage 私有 Bucket，推荐 Object Key：`users/{userId}/avatars/{uuid}.{ext}`。
+- 成功响应为更新后的 `ApiResponse<UserVO>`，其中 `avatarUrl` 是短期预签名地址。
+- Garage 写入成功后再更新用户头像元数据；数据库更新失败时应删除刚上传的新对象。
+- 新头像提交成功后异步或尽力删除旧对象，删除失败记录日志并由清理任务重试。
+
+`users` 表只保存以下对象元数据：
+
+| 字段 | 说明 |
+| --- | --- |
+| `avatar_bucket` | Garage Bucket 名称；当前 Demo 可复用私有 `mistake-images` Bucket |
+| `avatar_object_key` | 对象键，不保存完整 URL |
+| `avatar_original_name` | 用户上传时的原始文件名，仅用于审计 |
+| `avatar_content_type` | 服务端识别出的真实 MIME 类型 |
+| `avatar_size` | 文件字节数 |
+| `avatar_sha256` | 小写十六进制 SHA-256，用于完整性校验和去重判断 |
+| `avatar_updated_at` | 当前头像最后更新时间 |
+
+数据库不得保存头像二进制、预签名 URL、Garage Access Key 或 Secret Key。前端已按该接口完成选择、预览和上传交互；Auth Service 的上传实现仍需后续接入 Garage。
 
 ## Dashboard
 

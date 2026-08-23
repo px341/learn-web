@@ -23,6 +23,19 @@ security:
     secret: ${JWT_SECRET:change-this-dev-secret-key-at-least-32-bytes}
     access-token-ttl: ${JWT_ACCESS_TOKEN_TTL:15m}
 
+# Garage 暴露 S3 兼容 API。服务端访问地址和浏览器访问地址必须分开配置，
+# 否则 Docker 内部的 garage 主机名会被写进预签名 URL，导致浏览器无法访问。
+storage:
+  s3:
+    endpoint: ${GARAGE_ENDPOINT:http://localhost:3900}
+    public-endpoint: ${GARAGE_PUBLIC_ENDPOINT:http://localhost:3900}
+    region: ${GARAGE_REGION:garage}
+    bucket: ${GARAGE_BUCKET:mistake-images}
+    access-key: ${GARAGE_ACCESS_KEY:GK0123456789abcdef0123456789abcdef}
+    secret-key: ${GARAGE_SECRET_KEY:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+    path-style-access: ${GARAGE_PATH_STYLE_ACCESS:true}
+    presigned-url-ttl: ${GARAGE_PRESIGNED_URL_TTL:15m}
+
 springdoc:
   api-docs:
     path: /v3/api-docs

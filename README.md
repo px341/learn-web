@@ -52,17 +52,21 @@ Gateway 本地默认连接 `localhost:8848` 的 Nacos 和 `localhost:6379` 的 R
 Compose 使用 Garage `v2.3.0` 提供 S3 兼容对象存储，首次启动时自动创建私有 Bucket `mistake-images`。宿主机上运行的 Java 服务使用以下开发配置：
 
 ```yaml
-app:
-  storage:
+storage:
+  s3:
     endpoint: http://localhost:3900
+    public-endpoint: http://localhost:3900
     region: garage
     bucket: mistake-images
     access-key: GK0123456789abcdef0123456789abcdef
     secret-key: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
     path-style-access: true
+    presigned-url-ttl: 15m
 ```
 
-如果 Java 服务也运行在同一个 Compose 网络，将 `endpoint` 改为 `http://garage:3900`。开发凭据明文保存在 Compose 中，只允许用于本地环境；生产环境需要通过 Secret 注入。对象数据持久化在 `garage-data` Volume，普通的 `docker compose down` 不会删除它。
+所有字段都可以通过环境变量覆盖：`GARAGE_ENDPOINT`、`GARAGE_PUBLIC_ENDPOINT`、`GARAGE_REGION`、`GARAGE_BUCKET`、`GARAGE_ACCESS_KEY`、`GARAGE_SECRET_KEY`、`GARAGE_PATH_STYLE_ACCESS` 和 `GARAGE_PRESIGNED_URL_TTL`。
+
+如果 Java 服务也运行在同一个 Compose 网络，将 `GARAGE_ENDPOINT` 改为 `http://garage:3900`，但 `GARAGE_PUBLIC_ENDPOINT` 仍必须使用浏览器能访问的地址。本地可以使用 `http://localhost:3900`，生产环境应使用对象存储域名。开发凭据明文保存在 Compose 中，只允许用于本地环境；生产环境需要通过 Secret 注入。对象数据持久化在 `garage-data` Volume，普通的 `docker compose down` 不会删除它。
 
 ## 数据库表结构
 
