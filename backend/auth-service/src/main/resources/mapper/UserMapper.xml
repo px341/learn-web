@@ -75,4 +75,20 @@
         )
     </insert>
 
+    <update id="updateUserInfoById">
+        UPDATE users
+        <set>
+            <if test="userDTO.name != null">
+                name = #{userDTO.name},
+            </if>
+            <if test="userDTO.email != null">
+                email = #{userDTO.email},
+                email_verified_at = NULL,
+            </if>
+            updated_at = CURRENT_TIMESTAMP
+        </set>
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+    </update>
+
 </mapper>

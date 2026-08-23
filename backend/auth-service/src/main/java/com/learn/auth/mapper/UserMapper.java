@@ -1,5 +1,6 @@
 package com.learn.auth.mapper;
 
+import com.learn.auth.dto.UpdateCurrentUserDTO;
 import com.learn.auth.entity.UserEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -29,4 +30,12 @@ public interface UserMapper {
      * 插入用户。passwordHash 必须已在 Service 中使用 BCrypt 编码。
      */
     int insert(UserEntity user);
+
+    /**
+     * 只更新 DTO 中非 null 的用户资料字段。
+     */
+    int updateUserInfoById(
+            @Param("userDTO") UpdateCurrentUserDTO userDTO,
+            @Param("id") UUID id
+    );
 }

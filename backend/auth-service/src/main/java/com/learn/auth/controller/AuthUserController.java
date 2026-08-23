@@ -2,17 +2,18 @@ package com.learn.auth.controller;
 
 import com.learn.auth.dto.AuthDTO;
 import com.learn.auth.dto.RegisterRequestDTO;
+import com.learn.auth.dto.UpdateCurrentUserDTO;
 import com.learn.auth.service.AuthUserService;
 import com.learn.auth.vo.AuthVO;
 import com.learn.auth.vo.UserVO;
 import com.learn.common.vo.ApiResponse;
-import com.learn.security.currentuser.CurrentUserProvider;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,7 +31,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthUserController {
 
     private final AuthUserService authUserService;
-    private final CurrentUserProvider currentUserProvider;
 
     /**
      * 校验用户凭证并返回 Access Token 和公开用户信息。
@@ -61,7 +61,19 @@ public class AuthUserController {
     @GetMapping("/me")
     @SecurityRequirement(name = "bearerAuth")
     public ApiResponse<UserVO> authUserMe() {
-        UserVO userVO = authUserService.authUserMe(currentUserProvider.getUserId());
+        UserVO userVO = authUserService.authUserMe();
+        return ApiResponse.success(userVO);
+    }
+
+    /**
+     * 个人设置页保存用户资料
+     */
+    @Operation(summary = "个人设置页保存用户资料", description = "修改个人资料")
+    @PatchMapping("/me")
+    @SecurityRequirement(name = "bearerAuth")
+    public ApiResponse<UserVO> authUserUpdateMe(
+            @Valid @RequestBody UpdateCurrentUserDTO updateCurrentUserDTO) {
+        UserVO userVO = authUserService.authUserUpdateMe(updateCurrentUserDTO);
         return ApiResponse.success(userVO);
     }
 }

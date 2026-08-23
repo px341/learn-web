@@ -2,15 +2,18 @@ package com.learn.auth.service.impl;
 
 import com.learn.auth.dto.AuthDTO;
 import com.learn.auth.dto.RegisterRequestDTO;
+import com.learn.auth.dto.UpdateCurrentUserDTO;
 import com.learn.auth.entity.UserEntity;
 import com.learn.auth.exception.CurrentUserUnavailableException;
 import com.learn.auth.exception.EmailAlreadyRegisteredException;
+import com.learn.auth.exception.InvalidProfileUpdateException;
 import com.learn.auth.exception.PasswordConfirmationMismatchException;
 import com.learn.auth.mapper.UserMapper;
 import com.learn.auth.service.AuthUserService;
 import com.learn.auth.service.JwtTokenService;
 import com.learn.auth.vo.AuthVO;
 import com.learn.auth.vo.UserVO;
+import com.learn.security.currentuser.CurrentUserProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -37,6 +40,7 @@ public class AuthUserServiceImpl implements AuthUserService {
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenService jwtTokenService;
+    private final CurrentUserProvider currentUserProvider;
 
     @Override
     public AuthVO authUserLogin(AuthDTO authDTO) {
@@ -87,11 +91,54 @@ public class AuthUserServiceImpl implements AuthUserService {
     }
 
     @Override
-    public UserVO authUserMe(UUID userId) {
-        UserEntity user = userMapper.selectById(userId)
+    public UserVO authUserMe() {
+        return toUserVO(getCurrentActiveUser());
+    }
+
+    @Override
+    @Transactional
+    public UserVO authUserUpdateMe(UpdateCurrentUserDTO userDTO) {
+        if (userDTO.email() == null && userDTO.name() == null) {
+            throw new InvalidProfileUpdateException("至少提供 name 或 email");
+        }
+
+        UserEntity user = getCurrentActiveUser();
+        String name = normalizeName(userDTO.name());
+        String email = userDTO.email() == null ? null : normalizeProfileEmail(userDTO.email());
+
+        if (email != null) {
+            userMapper.selectByEmail(email)
+                    .filter(existing -> !existing.getId().equals(user.getId()))
+                    .ifPresent(existing -> {
+                        throw new EmailAlreadyRegisteredException();
+                    });
+        }
+
+        UpdateCurrentUserDTO normalizedRequest = new UpdateCurrentUserDTO(name, email);
+        try {
+            int updatedRows = userMapper.updateUserInfoById(normalizedRequest, user.getId());
+            if (updatedRows != 1) {
+                throw new CurrentUserUnavailableException();
+            }
+        } catch (DuplicateKeyException exception) {
+            // 唯一索引兜底处理两个用户并发修改为同一邮箱的竞争条件。
+            throw new EmailAlreadyRegisteredException();
+        }
+
+        if (name != null) {
+            user.setName(name);
+        }
+        if (email != null) {
+            user.setEmail(email);
+        }
+        return toUserVO(user);
+    }
+
+    private UserEntity getCurrentActiveUser() {
+        UUID userId = currentUserProvider.getUserId();
+        return userMapper.selectById(userId)
                 .filter(candidate -> ACTIVE_STATUS.equals(candidate.getStatus()))
                 .orElseThrow(CurrentUserUnavailableException::new);
-        return toUserVO(user);
     }
 
     private AuthVO createAuthVO(UserEntity user) {
@@ -111,6 +158,25 @@ public class AuthUserServiceImpl implements AuthUserService {
 
     private static String normalizeEmail(String email) {
         return email.trim().toLowerCase(Locale.ROOT);
+    }
+
+    private static String normalizeProfileEmail(String email) {
+        String normalized = normalizeEmail(email);
+        if (normalized.isEmpty()) {
+            throw new InvalidProfileUpdateException("邮箱不能为空");
+        }
+        return normalized;
+    }
+
+    private static String normalizeName(String name) {
+        if (name == null) {
+            return null;
+        }
+        String normalized = name.trim();
+        if (normalized.isEmpty()) {
+            throw new InvalidProfileUpdateException("显示名称不能为空");
+        }
+        return normalized;
     }
 
     private static BadCredentialsException invalidCredentials() {

@@ -19,6 +19,15 @@ import java.util.Map;
 @RestControllerAdvice
 public class AuthExceptionHandler {
 
+    /** 用户资料修改请求没有有效字段时返回 400。 */
+    @ExceptionHandler(InvalidProfileUpdateException.class)
+    public ResponseEntity<ErrorVO> handleInvalidProfileUpdate(
+            InvalidProfileUpdateException exception
+    ) {
+        return ResponseEntity.badRequest()
+                .body(ErrorVO.of("INVALID_PROFILE_UPDATE", exception.getMessage()));
+    }
+
     /** JWT 合法但对应账号已不存在或被禁用时，要求客户端清理当前会话。 */
     @ExceptionHandler(CurrentUserUnavailableException.class)
     public ResponseEntity<ErrorVO> handleCurrentUserUnavailable(
