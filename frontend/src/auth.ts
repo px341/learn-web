@@ -25,9 +25,20 @@ const loadSession = (): AuthSession | null => {
 
 let session = loadSession();
 
+const notifySessionChange = () => window.dispatchEvent(new Event("auth-session-change"));
+
 const clearSession = () => {
   session = null;
   localStorage.removeItem(storageKey);
+  notifySessionChange();
+};
+
+const saveUser = (user: User) => {
+  if (!session) throw new Error("当前未登录");
+  session = { ...session, user };
+  localStorage.setItem(storageKey, JSON.stringify(session));
+  notifySessionChange();
+  return user;
 };
 
 const request = async (path: string, body: unknown): Promise<AuthSession> => {
@@ -90,14 +101,35 @@ export const auth = {
     const user = (payload as ApiResponse<User> | null)?.data;
     if (!user?.id) throw new Error("服务器返回的用户数据不完整");
 
-    session = { ...session, user };
-    localStorage.setItem(storageKey, JSON.stringify(session));
-    return user;
+    return saveUser(user);
+  },
+  updateAvatar: async (file: File): Promise<User> => {
+    if (!session?.token) throw new Error("当前未登录");
+
+    const formData = new FormData();
+    formData.append("avatar", file);
+    const response = await fetch(`${apiUrl}/auth/me/avatar`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${session.token}` },
+      body: formData,
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | ApiResponse<User>
+      | ApiError
+      | null;
+
+    if (!response.ok) {
+      if (response.status === 401) clearSession();
+      throw new Error((payload as ApiError | null)?.message || "头像上传失败");
+    }
+
+    const user = (payload as ApiResponse<User> | null)?.data;
+    if (!user?.id) throw new Error("服务器返回的用户数据不完整");
+    return saveUser(user);
   },
   logout: clearSession,
   updateCredits: (credits: number) => {
     if (!session) return;
-    session = { ...session, user: { ...session.user, credits } };
-    localStorage.setItem(storageKey, JSON.stringify(session));
+    saveUser({ ...session.user, credits });
   },
 };

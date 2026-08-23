@@ -12,6 +12,7 @@ import {
 import {
   BookOpen,
   BrainCircuit,
+  Camera,
   CheckCircle2,
   ChevronRight,
   CircleHelp,
@@ -29,7 +30,19 @@ import {
 } from "lucide-react";
 import { auth } from "./auth";
 import { api } from "./mock";
-import type { Mistake } from "./types";
+import type { Mistake, User } from "./types";
+
+function Avatar({ user, className }: { user: User | null; className: string }) {
+  return (
+    <span className={className}>
+      {user?.avatarUrl ? (
+        <img src={user.avatarUrl} alt={`${user.name}的头像`} />
+      ) : (
+        user?.name?.[0]?.toUpperCase() || "D"
+      )}
+    </span>
+  );
+}
 
 function Logo() {
   return (
@@ -190,6 +203,17 @@ function Layout({ children }: { children: React.ReactNode }) {
           window.location.href = "/login";
         }
       });
+
+    const syncUser = () => {
+      const currentUser = auth.getUser();
+      if (!currentUser) {
+        window.location.href = "/login";
+        return;
+      }
+      setUser(currentUser);
+    };
+    window.addEventListener("auth-session-change", syncUser);
+    return () => window.removeEventListener("auth-session-change", syncUser);
   }, []);
   const items = [
     ["/dashboard", "总览", Home],
@@ -232,7 +256,7 @@ function Layout({ children }: { children: React.ReactNode }) {
           <ChevronRight size={15} />
         </div>
         <div className="side-user">
-          <div className="avatar">{user?.name?.[0]?.toUpperCase() || "D"}</div>
+          <Avatar className="avatar" user={user} />
           <div className="user-copy">
             <strong>{user?.name || "同学"}</strong>
             <small>{user?.email || ""}</small>
@@ -273,8 +297,8 @@ function Layout({ children }: { children: React.ReactNode }) {
               <span>剩余分析次数</span>
               <b>{user?.credits ?? 0}</b>
             </div>
-            <Link className="avatar" to="/profile">
-              {user?.name?.[0]?.toUpperCase() || "D"}
+            <Link to="/profile" aria-label="打开个人设置">
+              <Avatar className="avatar" user={user} />
             </Link>
           </div>
         </header>
@@ -961,12 +985,43 @@ function PaymentResult() {
   );
 }
 function Profile() {
-  const user = auth.getUser()!;
+  const [user, setUser] = useState(auth.getUser()!);
+  const [avatarFile, setAvatarFile] = useState<File>();
+  const [avatarPreview, setAvatarPreview] = useState<string>();
+  const [avatarError, setAvatarError] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  useEffect(() => {
+    return () => {
+      if (avatarPreview) URL.revokeObjectURL(avatarPreview);
+    };
+  }, [avatarPreview]);
+
+  const selectAvatar = (file?: File) => {
+    setAvatarError("");
+    if (!file) return;
+    if (!file.type.match(/^image\/(png|jpeg|webp)$/)) {
+      setAvatarFile(undefined);
+      setAvatarPreview(undefined);
+      setAvatarError("仅支持 PNG、JPG、WEBP 图片");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setAvatarFile(undefined);
+      setAvatarPreview(undefined);
+      setAvatarError("头像不能超过 5MB");
+      return;
+    }
+    setAvatarFile(file);
+    setAvatarPreview(URL.createObjectURL(file));
+  };
+
+  const previewUser = avatarPreview ? { ...user, avatarUrl: avatarPreview } : user;
   return (
     <>
       <PageTitle eyebrow="ACCOUNT" title="个人设置" />
       <section className="panel profile-card">
-        <div className="profile-avatar">{user.name[0]?.toUpperCase()}</div>
+        <Avatar className="profile-avatar" user={user} />
         <div>
           <h2>{user.name}</h2>
           <p>{user.email}</p>
@@ -980,6 +1035,46 @@ function Profile() {
         >
           <LogOut size={16} /> 退出登录
         </button>
+      </section>
+      <section className="panel profile-form avatar-settings">
+        <h3>头像</h3>
+        <div className="avatar-editor">
+          <Avatar className="profile-avatar avatar-preview" user={previewUser} />
+          <div className="avatar-editor-actions">
+            <label className="secondary avatar-file-button">
+              <Camera size={16} /> 选择图片
+              <input
+                type="file"
+                accept="image/png,image/jpeg,image/webp"
+                onChange={(event) => selectAvatar(event.target.files?.[0])}
+              />
+            </label>
+            <small>支持 PNG、JPG、WEBP，最大 5MB</small>
+          </div>
+          <button
+            className="primary"
+            type="button"
+            disabled={!avatarFile || avatarUploading}
+            onClick={async () => {
+              if (!avatarFile) return;
+              setAvatarUploading(true);
+              setAvatarError("");
+              try {
+                const updatedUser = await auth.updateAvatar(avatarFile);
+                setUser(updatedUser);
+                setAvatarFile(undefined);
+                setAvatarPreview(undefined);
+              } catch (cause) {
+                setAvatarError(cause instanceof Error ? cause.message : "头像上传失败");
+              } finally {
+                setAvatarUploading(false);
+              }
+            }}
+          >
+            {avatarUploading ? "上传中…" : "保存头像"}
+          </button>
+        </div>
+        {avatarError && <p className="form-error" role="alert">{avatarError}</p>}
       </section>
       <section className="panel profile-form">
         <h3>账户信息</h3>
