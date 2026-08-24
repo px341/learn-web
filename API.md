@@ -4,17 +4,17 @@
 
 ## 当前实现状态
 
-| 模块 | 前端现状 | 后端现状 | 下一步 |
-| --- | --- | --- | --- |
-| 登录、注册 | 已调用真实 API | Auth Service 已实现，Gateway 已路由 | 保持现状 |
-| 当前用户查询 | 启动受保护页面时调用真实 API，并刷新登录缓存 | Auth Service 已实现 `GET /api/auth/me` | 保持现状 |
-| 资料修改 | 保存按钮无请求 | 未实现 | 后续实现 `PATCH /api/auth/me` |
-| 用户头像 | 已完成选择、预览和 `PUT /api/auth/me/avatar` 请求 | 数据表已设计，上传接口未实现 | Auth Service 接入 Garage 并生成预签名 URL |
-| Dashboard | 从错题 Mock 计算，趋势和部分统计为硬编码 | 未实现 | 实现统计接口 |
-| 错题列表、详情、上传 | 使用 `localStorage` Mock，图片保存为 Base64 | 未实现 | 新建 Mistake Service 并接入 Garage |
-| 分析进度 | 前端定时器模拟状态变化 | 未实现 | 前端轮询详情接口，后端异步分析 |
-| 标记已掌握 | 按钮无请求 | 未实现 | 实现掌握状态接口 |
-| 额度、模拟支付 | 前端直接修改本地额度 | 未实现 | 额度只能由服务端变更 |
+| 模块                 | 前端现状                                          | 后端现状                                        | 下一步                                    |
+| -------------------- | ------------------------------------------------- | ----------------------------------------------- | ----------------------------------------- |
+| 登录、注册           | 已调用真实 API                                    | Auth Service 已实现，Gateway 已路由             | 保持现状                                  |
+| 当前用户查询         | 启动受保护页面时调用真实 API，并刷新登录缓存      | Auth Service 已实现 `GET /api/auth/me`          | 保持现状                                  |
+| 资料修改             | 保存按钮无请求                                    | Auth Service 已实现 `PATCH /api/auth/me`        | 保持现状                                  |
+| 用户头像             | 已完成选择、预览和 `PUT /api/auth/me/avatar` 请求 | Auth Service 已实现 `PATCH /api/auth/me/avatar` | Auth Service 接入 Garage 并生成预签名 URL |
+| Dashboard            | 从错题 Mock 计算，趋势和部分统计为硬编码          | 未实现                                          | 实现统计接口                              |
+| 错题列表、详情、上传 | 使用 `localStorage` Mock，图片保存为 Base64       | 未实现                                          | 新建 Mistake Service 并接入 Garage        |
+| 分析进度             | 前端定时器模拟状态变化                            | 未实现                                          | 前端轮询详情接口，后端异步分析            |
+| 标记已掌握           | 按钮无请求                                        | 未实现                                          | 实现掌握状态接口                          |
+| 额度、模拟支付       | 前端直接修改本地额度                              | 未实现                                          | 额度只能由服务端变更                      |
 
 目前 Gateway 只配置了 `/api/auth/**` 路由。新增用户、错题、Dashboard 和支付服务后，必须同步增加 Gateway 路由和 OpenAPI 聚合配置。
 
@@ -38,9 +38,9 @@
 
 成功响应统一使用 `ApiResponse<T>`：
 
-| 字段 | Java 类型 | JSON 类型 | 必填 | 说明 |
-| --- | --- | --- | --- | --- |
-| `data` | `T` | object | 是 | 实际响应数据 |
+| 字段   | Java 类型 | JSON 类型 | 必填 | 说明         |
+| ------ | --------- | --------- | ---- | ------------ |
+| `data` | `T`       | object    | 是   | 实际响应数据 |
 
 ```json
 {
@@ -50,11 +50,11 @@
 
 失败响应统一使用 `ErrorVO`：
 
-| 字段 | Java 类型 | JSON 类型 | 必填 | 说明 |
-| --- | --- | --- | --- | --- |
-| `code` | `String` | string | 是 | 稳定的业务错误码，供前端判断错误类型 |
-| `message` | `String` | string | 是 | 可直接展示或记录的错误信息 |
-| `fieldErrors` | `Map<String, String>` | object | 否 | 参数校验失败时，各字段对应的错误信息 |
+| 字段          | Java 类型             | JSON 类型 | 必填 | 说明                                 |
+| ------------- | --------------------- | --------- | ---- | ------------------------------------ |
+| `code`        | `String`              | string    | 是   | 稳定的业务错误码，供前端判断错误类型 |
+| `message`     | `String`              | string    | 是   | 可直接展示或记录的错误信息           |
+| `fieldErrors` | `Map<String, String>` | object    | 否   | 参数校验失败时，各字段对应的错误信息 |
 
 ```json
 {
@@ -84,10 +84,10 @@ RegisterRequestDTO ─┘                         ├─ token
 
 #### `AuthDTO`
 
-| 字段 | Java 类型 | JSON 类型 | 必填 | 校验规则 | 说明 |
-| --- | --- | --- | --- | --- | --- |
-| `email` | `String` | string | 是 | 非空、合法邮箱、最长 254 字符 | 登录邮箱；后端先去除首尾空格并转为小写 |
-| `password` | `String` | string | 是 | 非空、6～64 字符 | 用户明文密码，仅用于本次认证 |
+| 字段       | Java 类型 | JSON 类型 | 必填 | 校验规则                      | 说明                                   |
+| ---------- | --------- | --------- | ---- | ----------------------------- | -------------------------------------- |
+| `email`    | `String`  | string    | 是   | 非空、合法邮箱、最长 254 字符 | 登录邮箱；后端先去除首尾空格并转为小写 |
+| `password` | `String`  | string    | 是   | 非空、6～64 字符              | 用户明文密码，仅用于本次认证           |
 
 请求：
 
@@ -123,12 +123,12 @@ RegisterRequestDTO ─┘                         ├─ token
 
 #### `RegisterRequestDTO`
 
-| 字段 | Java 类型 | JSON 类型 | 必填 | 校验规则 | 说明 |
-| --- | --- | --- | --- | --- | --- |
-| `name` | `String` | string | 是 | 去除首尾空格后 1～30 字符 | 用户显示名称 |
-| `email` | `String` | string | 是 | 非空、合法邮箱、最长 254 字符 | 注册邮箱；存储前去除首尾空格并转为小写 |
-| `password` | `String` | string | 是 | 6～64 字符 | 明文密码；后端必须使用 BCrypt 后再保存 |
-| `passwordConfirmation` | `String` | string | 是 | 必须与 `password` 完全一致 | 仅用于请求校验，不能写入数据库 |
+| 字段                   | Java 类型 | JSON 类型 | 必填 | 校验规则                      | 说明                                   |
+| ---------------------- | --------- | --------- | ---- | ----------------------------- | -------------------------------------- |
+| `name`                 | `String`  | string    | 是   | 去除首尾空格后 1～30 字符     | 用户显示名称                           |
+| `email`                | `String`  | string    | 是   | 非空、合法邮箱、最长 254 字符 | 注册邮箱；存储前去除首尾空格并转为小写 |
+| `password`             | `String`  | string    | 是   | 6～64 字符                    | 明文密码；后端必须使用 BCrypt 后再保存 |
+| `passwordConfirmation` | `String`  | string    | 是   | 必须与 `password` 完全一致    | 仅用于请求校验，不能写入数据库         |
 
 请求：
 
@@ -151,20 +151,20 @@ RegisterRequestDTO ─┘                         ├─ token
 
 登录和注册成功后，`ApiResponse.data` 使用此结构。
 
-| 字段 | Java 类型 | JSON 类型 | 必填 | 说明 |
-| --- | --- | --- | --- | --- |
-| `token` | `String` | string | 是 | JWT Access Token；请求其他接口时放入 `Authorization` 请求头 |
-| `user` | `UserVO` | object | 是 | 当前登录用户的公开信息 |
+| 字段    | Java 类型 | JSON 类型 | 必填 | 说明                                                        |
+| ------- | --------- | --------- | ---- | ----------------------------------------------------------- |
+| `token` | `String`  | string    | 是   | JWT Access Token；请求其他接口时放入 `Authorization` 请求头 |
+| `user`  | `UserVO`  | object    | 是   | 当前登录用户的公开信息                                      |
 
 #### `UserVO`
 
-| 字段 | Java 类型 | JSON 类型 | 必填 | 说明 |
-| --- | --- | --- | --- | --- |
-| `id` | `String` | string | 是 | 用户唯一标识；UUID 在 JSON 中也序列化为字符串 |
-| `name` | `String` | string | 是 | 用户显示名称 |
-| `email` | `String` | string | 是 | 用户邮箱 |
-| `credits` | `Integer` | number | 是 | 剩余可用分析次数；新用户默认为 3 |
-| `avatarUrl` | `String` | string/null | 否 | Garage 私有对象生成的短期预签名 URL；没有头像时为 `null` |
+| 字段        | Java 类型 | JSON 类型   | 必填 | 说明                                                     |
+| ----------- | --------- | ----------- | ---- | -------------------------------------------------------- |
+| `id`        | `String`  | string      | 是   | 用户唯一标识；UUID 在 JSON 中也序列化为字符串            |
+| `name`      | `String`  | string      | 是   | 用户显示名称                                             |
+| `email`     | `String`  | string      | 是   | 用户邮箱                                                 |
+| `credits`   | `Integer` | number      | 是   | 剩余可用分析次数；新用户默认为 3                         |
+| `avatarUrl` | `String`  | string/null | 否   | Garage 私有对象生成的短期预签名 URL；没有头像时为 `null` |
 
 公共响应对象放在 `common-model`，认证业务自己的 DTO、VO 仍放在 `auth-service`：
 
@@ -240,15 +240,15 @@ backend/
 
 `users` 表只保存以下对象元数据：
 
-| 字段 | 说明 |
-| --- | --- |
-| `avatar_bucket` | Garage Bucket 名称；当前 Demo 可复用私有 `mistake-images` Bucket |
-| `avatar_object_key` | 对象键，不保存完整 URL |
-| `avatar_original_name` | 用户上传时的原始文件名，仅用于审计 |
-| `avatar_content_type` | 服务端识别出的真实 MIME 类型 |
-| `avatar_size` | 文件字节数 |
-| `avatar_sha256` | 小写十六进制 SHA-256，用于完整性校验和去重判断 |
-| `avatar_updated_at` | 当前头像最后更新时间 |
+| 字段                   | 说明                                                             |
+| ---------------------- | ---------------------------------------------------------------- |
+| `avatar_bucket`        | Garage Bucket 名称；当前 Demo 可复用私有 `mistake-images` Bucket |
+| `avatar_object_key`    | 对象键，不保存完整 URL                                           |
+| `avatar_original_name` | 用户上传时的原始文件名，仅用于审计                               |
+| `avatar_content_type`  | 服务端识别出的真实 MIME 类型                                     |
+| `avatar_size`          | 文件字节数                                                       |
+| `avatar_sha256`        | 小写十六进制 SHA-256，用于完整性校验和去重判断                   |
+| `avatar_updated_at`    | 当前头像最后更新时间                                             |
 
 数据库不得保存头像二进制、预签名 URL、Garage Access Key 或 Secret Key。前端已按该接口完成选择、预览和上传交互；Auth Service 的上传实现仍需后续接入 Garage。
 
@@ -258,9 +258,9 @@ backend/
 
 查询参数：
 
-| 参数 | 必填 | 默认值 | 说明 |
-| --- | --- | --- | --- |
-| `days` | 否 | `7` | 正确率趋势天数，可选 7、14、30 |
+| 参数   | 必填 | 默认值 | 说明                           |
+| ------ | ---- | ------ | ------------------------------ |
+| `days` | 否   | `7`    | 正确率趋势天数，可选 7、14、30 |
 
 响应：
 
@@ -310,26 +310,26 @@ backend/
 
 状态及含义：
 
-| 状态 | 含义 |
-| --- | --- |
-| `queued` | 已创建并进入分析队列 |
-| `analyzing` | OCR 或 AI 分析中 |
-| `completed` | 分析成功，可展示 `analysis` |
-| `failed` | 分析失败，可展示 `failureMessage` |
+| 状态        | 含义                              |
+| ----------- | --------------------------------- |
+| `queued`    | 已创建并进入分析队列              |
+| `analyzing` | OCR 或 AI 分析中                  |
+| `completed` | 分析成功，可展示 `analysis`       |
+| `failed`    | 分析失败，可展示 `failureMessage` |
 
 ### `GET /api/mistakes`
 
 返回当前用户的错题分页列表。
 
-| 查询参数 | 必填 | 说明 |
-| --- | --- | --- |
-| `keyword` | 否 | 匹配题目名称、学科、章节或知识点 |
-| `subject` | 否 | 精确筛选学科 |
-| `status` | 否 | 按分析状态筛选 |
-| `mastered` | 否 | `true` 或 `false` |
-| `page` | 否 | 从 0 开始，默认 0 |
-| `size` | 否 | 默认 20，最大 100 |
-| `sort` | 否 | 默认 `createdAt,desc` |
+| 查询参数   | 必填 | 说明                             |
+| ---------- | ---- | -------------------------------- |
+| `keyword`  | 否   | 匹配题目名称、学科、章节或知识点 |
+| `subject`  | 否   | 精确筛选学科                     |
+| `status`   | 否   | 按分析状态筛选                   |
+| `mastered` | 否   | `true` 或 `false`                |
+| `page`     | 否   | 从 0 开始，默认 0                |
+| `size`     | 否   | 默认 20，最大 100                |
+| `sort`     | 否   | 默认 `createdAt,desc`            |
 
 响应：`ApiResponse<PageVO<MistakeSummaryVO>>`。
 
@@ -388,15 +388,15 @@ backend/
 
 创建错题、扣减 1 次额度并开始异步分析。请求类型为 `multipart/form-data`。
 
-| 字段 | 类型 | 必填 | 校验规则 |
-| --- | --- | --- | --- |
-| `title` | string | 否 | 最长 100；为空时由题目文字生成或使用“未命名错题” |
-| `subject` | string | 是 | 1～30 字符 |
-| `chapter` | string | 否 | 最长 100 |
-| `type` | string | 是 | 1～30 字符 |
-| `text` | string | 条件必填 | 最长 10000；`text` 和 `image` 至少提供一个 |
-| `userAnswer` | string | 否 | 最长 10000 |
-| `image` | file | 条件必填 | PNG/JPEG/WEBP，最大 10MB；与 `text` 至少提供一个 |
+| 字段         | 类型   | 必填     | 校验规则                                         |
+| ------------ | ------ | -------- | ------------------------------------------------ |
+| `title`      | string | 否       | 最长 100；为空时由题目文字生成或使用“未命名错题” |
+| `subject`    | string | 是       | 1～30 字符                                       |
+| `chapter`    | string | 否       | 最长 100                                         |
+| `type`       | string | 是       | 1～30 字符                                       |
+| `text`       | string | 条件必填 | 最长 10000；`text` 和 `image` 至少提供一个       |
+| `userAnswer` | string | 否       | 最长 10000                                       |
+| `image`      | file   | 条件必填 | PNG/JPEG/WEBP，最大 10MB；与 `text` 至少提供一个 |
 
 后端必须检查文件真实内容，不能只信扩展名或客户端提供的 MIME。图片上传 Garage 成功后，错题记录、额度扣减和待发布事件在同一数据库事务中提交，再由 Outbox 发布器发送 RabbitMQ 分析消息；消息只传 `mistakeId`，不传图片二进制。这样 RabbitMQ 暂时不可用时不会出现已扣额度但任务永久丢失的问题。
 
@@ -422,13 +422,13 @@ backend/
 
 常见失败：
 
-| HTTP | 错误码 | 场景 |
-| --- | --- | --- |
-| 400 | `MISTAKE_CONTENT_REQUIRED` | 图片和题目文字均为空 |
-| 402 | `INSUFFICIENT_CREDITS` | 分析额度不足 |
-| 413 | `IMAGE_TOO_LARGE` | 图片超过 10MB |
-| 415 | `UNSUPPORTED_IMAGE_TYPE` | 图片格式不支持或文件签名不匹配 |
-| 503 | `STORAGE_UNAVAILABLE` | Garage 暂时不可用，不能扣减额度 |
+| HTTP | 错误码                     | 场景                            |
+| ---- | -------------------------- | ------------------------------- |
+| 400  | `MISTAKE_CONTENT_REQUIRED` | 图片和题目文字均为空            |
+| 402  | `INSUFFICIENT_CREDITS`     | 分析额度不足                    |
+| 413  | `IMAGE_TOO_LARGE`          | 图片超过 10MB                   |
+| 415  | `UNSUPPORTED_IMAGE_TYPE`   | 图片格式不支持或文件签名不匹配  |
+| 503  | `STORAGE_UNAVAILABLE`      | Garage 暂时不可用，不能扣减额度 |
 
 前端进入详情页后，每 2 秒调用一次 `GET /api/mistakes/{id}`；状态变为 `completed` 或 `failed` 后停止轮询。后续如需降低轮询开销，再增加 SSE，不作为第一版必需项。
 
