@@ -256,12 +256,6 @@ backend/
 
 ### `GET /api/dashboard/stats`
 
-查询参数：
-
-| 参数   | 必填 | 默认值 | 说明                           |
-| ------ | ---- | ------ | ------------------------------ |
-| `days` | 否   | `7`    | 正确率趋势天数，可选 7、14、30 |
-
 响应：
 
 ```json
@@ -269,23 +263,19 @@ backend/
   "data": {
     "total": 28,
     "weeklyNew": 5,
-    "averageAccuracy": 72,
-    "pendingReview": 4,
     "totalChangePercent": 12,
-    "accuracyChangePercent": 8,
-    "typeCounts": [
-      { "type": "概念不清", "count": 10 },
-      { "type": "审题错误", "count": 7 }
-    ],
-    "accuracyTrend": [
-      { "date": "2026-08-16", "accuracy": 61 },
-      { "date": "2026-08-17", "accuracy": 68 }
+    "questionTypeCounts": [
+      { "questionType": "选择题", "count": 10 },
+      { "questionType": "解答题", "count": 7 },
+      { "questionType": "未分类", "count": 2 }
     ]
   }
 }
 ```
 
-- 百分比字段是 `0～100` 的整数，不带 `%`。
+- `weeklyNew` 为近 7 天新增的未归档错题数。
+- `questionTypeCounts` 按 `personal_questions.question_type` 统计，空值归为“未分类”。
+- `totalChangePercent` 为近 7 天新增相对于 7 天前累计数的变化百分比，不带 `%`。
 - 没有数据时计数返回 `0`，数组返回 `[]`，不要返回 `null`。
 - Dashboard 的最近错题复用 `GET /api/mistakes?page=0&size=4`，无需在统计响应中重复返回。
 

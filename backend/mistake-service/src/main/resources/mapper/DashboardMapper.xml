@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.learn.mistakeservice.mapper.DashboardMapper">
+    <resultMap id="DashboardSummaryResultMap"
+               type="com.learn.mistakeservice.mapper.DashboardSummaryProjection">
+        <result property="total" column="total"/>
+        <result property="weeklyNew" column="weekly_new"/>
+        <result property="previousTotal" column="previous_total"/>
+    </resultMap>
+
+    <resultMap id="QuestionTypeCountResultMap"
+               type="com.learn.mistakeservice.vo.QuestionTypeCountVO">
+        <constructor>
+            <arg column="question_type" javaType="java.lang.String"/>
+            <arg column="count" javaType="long"/>
+        </constructor>
+    </resultMap>
+
+    <select id="selectSummary" resultMap="DashboardSummaryResultMap">
+        SELECT
+            COUNT(*) FILTER (WHERE status = 'ACTIVE') AS total,
+            COUNT(*) FILTER (
+                WHERE status = 'ACTIVE'
+                  AND created_at &gt;= #{currentPeriodStart}
+            ) AS weekly_new,
+            COUNT(*) FILTER (
+                WHERE status = 'ACTIVE'
+                  AND created_at &lt; #{currentPeriodStart}
+            ) AS previous_total
+        FROM personal_questions
+        WHERE user_id = #{userId}
+    </select>
+
+    <select id="selectQuestionTypeCounts" resultMap="QuestionTypeCountResultMap">
+        SELECT
+            COALESCE(NULLIF(TRIM(question_type), ''), '未分类') AS question_type,
+            COUNT(*) AS count
+        FROM personal_questions
+        WHERE user_id = #{userId}
+          AND status = 'ACTIVE'
+        GROUP BY COALESCE(NULLIF(TRIM(question_type), ''), '未分类')
+        ORDER BY count DESC, question_type ASC
+    </select>
+</mapper>

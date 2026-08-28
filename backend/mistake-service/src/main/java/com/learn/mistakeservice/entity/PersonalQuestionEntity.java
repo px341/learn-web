@@ -8,9 +8,8 @@ import java.util.UUID;
 /**
  * {@code personal_questions} 表的内部持久化对象。
  *
- * <p>Dashboard 通过该实体对应的数据统计累计错题、本周新增和错因分布，但不会把实体
- * 直接返回给客户端。正确率和待复习统计应关联后续的分析/复习记录实体，而不是在
- * Dashboard 下建立重复的统计实体。</p>
+ * <p>Dashboard 直接聚合该表中的累计错题、近 7 天新增和题型分布，
+ * 但不会把该实体直接返回给客户端。</p>
  */
 @Data
 public class PersonalQuestionEntity {
