@@ -10,12 +10,18 @@ spring:
     driver-class-name: org.postgresql.Driver
   servlet:
     multipart:
-      max-file-size: 5MB
-      max-request-size: 6MB
+      max-file-size: 10MB
+      max-request-size: 11MB
   cloud:
     nacos:
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:admin}
+    password: ${RABBITMQ_PASSWORD:admin}
+    publisher-confirm-type: correlated
 
 mybatis:
   mapper-locations: classpath:/mapper/*.xml
@@ -38,6 +44,11 @@ storage:
     secret-key: ${GARAGE_SECRET_KEY:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
     path-style-access: ${GARAGE_PATH_STYLE_ACCESS:true}
     presigned-url-ttl: ${GARAGE_PRESIGNED_URL_TTL:15m}
+
+messaging:
+  outbox:
+    fixed-delay: ${OUTBOX_FIXED_DELAY:2s}
+    initial-delay: ${OUTBOX_INITIAL_DELAY:30s}
 
 springdoc:
   api-docs:

@@ -1,6 +1,6 @@
-# 错题实验室前端
+# 错题实验室
 
-当前仓库只维护前端演示，后端由你使用 Java + Maven + Spring Cloud 实现。
+当前仓库包含 React 前端，以及 Java、Maven、Spring Cloud 实现的 Gateway、Auth Service 和 Mistake Service。
 
 ```bash
 cd frontend
@@ -8,7 +8,7 @@ npm install
 npm run dev
 ```
 
-API 对接契约见 [API.md](./API.md)。前端登录和注册已接入真实 API；错题分析、支付等尚未实现的服务仍使用 `frontend/src/mock.ts`。
+API 对接契约和逐项实现状态见 [API.md](./API.md)。前端认证与头像已接入真实 API；错题和 Dashboard 页面仍主要使用 `frontend/src/mock.ts`，支付与异步分析 Worker 尚未实现。
 
 ## 本地端口
 
@@ -77,6 +77,7 @@ storage:
 | `001_create_users.sql` | `users` | 用户、额度和认证状态 |
 | `002_create_questions.sql` | `official_questions`、`personal_questions` | 官方题与个人题；个人题可选择性匹配官方题 |
 | `003_add_mistake_analysis.sql` | `personal_questions` | 个人错题的分析状态、分析结果、掌握状态和用户答案 |
+| `004_create_mistake_outbox.sql` | `mistake_outbox_events` | 可靠发布错题分析任务的事务 Outbox |
 
 已有数据卷不会再次执行 Docker 初始化脚本，可手动导入：
 
@@ -84,4 +85,5 @@ storage:
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/001_create_users.sql
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/002_create_questions.sql
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/003_add_mistake_analysis.sql
+docker compose exec -T postgres psql -U postgres -d learn < sql_table/004_create_mistake_outbox.sql
 ```

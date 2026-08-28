@@ -14,4 +14,10 @@ public interface MistakeMapper {
             @Param("id") UUID id,
             @Param("userId") UUID userId
     );
+
+    int insert(PersonalQuestionEntity mistake);
+
+    Integer selectActiveCreditsForUpdate(@Param("userId") UUID userId);
+
+    int decrementCredit(@Param("userId") UUID userId);
 }

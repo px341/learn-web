@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.learn.mistakeservice.mapper.MistakeOutboxMapper">
+    <resultMap id="OutboxEventResultMap"
+               type="com.learn.mistakeservice.entity.MistakeOutboxEventEntity">
+        <id property="id" column="id"/>
+        <result property="mistakeId" column="mistake_id"/>
+        <result property="eventType" column="event_type"/>
+        <result property="status" column="status"/>
+        <result property="attempts" column="attempts"/>
+        <result property="nextAttemptAt" column="next_attempt_at"/>
+        <result property="lastError" column="last_error"/>
+        <result property="publishedAt" column="published_at"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="insertAnalysisRequested">
+        INSERT INTO mistake_outbox_events (
+            id,
+            mistake_id,
+            event_type,
+            status,
+            attempts,
+            next_attempt_at,
+            created_at
+        ) VALUES (
+            #{id},
+            #{mistakeId},
+            'MISTAKE_ANALYSIS_REQUESTED',
+            'PENDING',
+            0,
+            #{createdAt},
+            #{createdAt}
+        )
+    </insert>
+
+    <select id="selectPendingForUpdate" resultMap="OutboxEventResultMap">
+        SELECT
+            id,
+            mistake_id,
+            event_type,
+            status,
+            attempts,
+            next_attempt_at,
+            last_error,
+            published_at,
+            created_at
+        FROM mistake_outbox_events
+        WHERE status = 'PENDING'
+          AND next_attempt_at &lt;= CURRENT_TIMESTAMP
+        ORDER BY created_at
+        LIMIT #{limit}
+        FOR UPDATE SKIP LOCKED
+    </select>
+
+    <update id="markPublished">
+        UPDATE mistake_outbox_events
+        SET status = 'PUBLISHED',
+            published_at = #{publishedAt},
+            last_error = NULL
+        WHERE id = #{id}
+          AND status = 'PENDING'
+    </update>
+
+    <update id="markRetry">
+        UPDATE mistake_outbox_events
+        SET attempts = attempts + 1,
+            next_attempt_at = CURRENT_TIMESTAMP
+                + make_interval(secs =&gt; LEAST(300, power(2, attempts + 1)::INTEGER)),
+            last_error = #{lastError}
+        WHERE id = #{id}
+          AND status = 'PENDING'
+    </update>
+</mapper>

@@ -4,19 +4,23 @@
 
 ## 当前实现状态
 
-| 模块                 | 前端现状                                          | 后端现状                                        | 下一步                                    |
-| -------------------- | ------------------------------------------------- | ----------------------------------------------- | ----------------------------------------- |
-| 登录、注册           | 已调用真实 API                                    | Auth Service 已实现，Gateway 已路由             | 保持现状                                  |
-| 当前用户查询         | 启动受保护页面时调用真实 API，并刷新登录缓存      | Auth Service 已实现 `GET /api/auth/me`          | 保持现状                                  |
-| 资料修改             | 保存按钮无请求                                    | Auth Service 已实现 `PATCH /api/auth/me`        | 保持现状                                  |
-| 用户头像             | 已完成选择、预览和 `PUT /api/auth/me/avatar` 请求 | Auth Service 已实现 `PATCH /api/auth/me/avatar` | Auth Service 接入 Garage 并生成预签名 URL |
-| Dashboard            | 从错题 Mock 计算，趋势和部分统计为硬编码          | 未实现                                          | 实现统计接口                              |
-| 错题列表、详情、上传 | 使用 `localStorage` Mock，图片保存为 Base64       | 未实现                                          | 新建 Mistake Service 并接入 Garage        |
-| 分析进度             | 前端定时器模拟状态变化                            | 未实现                                          | 前端轮询详情接口，后端异步分析            |
-| 标记已掌握           | 按钮无请求                                        | 未实现                                          | 实现掌握状态接口                          |
-| 额度、模拟支付       | 前端直接修改本地额度                              | 未实现                                          | 额度只能由服务端变更                      |
+以下状态以仓库当前代码为准；“契约已定义”不代表对应接口已经实现。
 
-目前 Gateway 只配置了 `/api/auth/**` 路由。新增用户、错题、Dashboard 和支付服务后，必须同步增加 Gateway 路由和 OpenAPI 聚合配置。
+| 模块         | 前端现状                                          | 后端现状                                                           | 后续工作                              |
+| ------------ | ------------------------------------------------- | ------------------------------------------------------------------ | ------------------------------------- |
+| 登录、注册   | 已调用真实 API                                    | Auth Service 已实现，Gateway 已路由                                | 保持现状                              |
+| 当前用户查询 | 启动受保护页面时调用真实 API，并刷新登录缓存      | 已实现 `GET /api/auth/me`                                          | 保持现状                              |
+| 资料修改     | 保存按钮尚未发送请求                              | 已实现 `PATCH /api/auth/me`                                        | 前端接入                              |
+| 用户头像     | 已实现选择、预览和上传                            | 已实现 `PUT /api/auth/me/avatar`、Garage 存储及预签名 URL           | 补充对象清理重试任务                  |
+| Dashboard    | 仍从错题 Mock 计算，部分数据硬编码                | 已实现 `GET /api/dashboard/stats`                                  | 前端接入统计接口                      |
+| 错题列表     | 使用 `localStorage` Mock                          | 尚未实现 `GET /api/mistakes`                                      | 实现分页、筛选和排序                  |
+| 错题详情     | 仍读取 Mock；置信度已改为读取 `analysis.confidence` | 已实现 `GET /api/mistakes/{id}`、用户隔离和图片预签名              | 前端接入详情接口及轮询                |
+| 错题上传     | 使用 Mock，图片以 Base64 保存                     | 已实现 `POST /api/mistakes`、额度事务、Garage 上传和 Outbox         | 前端接入                              |
+| 分析进度     | 前端定时器模拟状态变化                            | Outbox 发布已实现，异步分析 Worker 尚未实现                         | 实现 Worker 和前端轮询                |
+| 标记已掌握   | 按钮尚未发送请求                                  | 已定义 `UpdateMasteryDTO`，接口尚未实现                            | 实现 mastery 接口                     |
+| 额度、支付   | 前端仍直接修改本地额度                            | 尚未实现                                                           | 额度改为服务端事务管理                |
+
+Gateway 已配置 `/api/auth/**`、`/api/dashboard/**` 和 `/api/mistakes/**` 路由，并聚合 Auth Service 与 Mistake Service 的 OpenAPI 文档。支付服务落地后仍需增加对应路由和文档聚合配置。
 
 ## 通用约定
 
@@ -250,11 +254,13 @@ backend/
 | `avatar_sha256`        | 小写十六进制 SHA-256，用于完整性校验和去重判断                   |
 | `avatar_updated_at`    | 当前头像最后更新时间                                             |
 
-数据库不得保存头像二进制、预签名 URL、Garage Access Key 或 Secret Key。前端已按该接口完成选择、预览和上传交互；Auth Service 的上传实现仍需后续接入 Garage。
+数据库不得保存头像二进制、预签名 URL、Garage Access Key 或 Secret Key。前端上传交互、Auth Service 的 Garage 写入和短期预签名 URL 均已实现。
 
 ## Dashboard
 
 ### `GET /api/dashboard/stats`
+
+实现状态：后端及 Gateway 路由已实现；前端 Dashboard 尚未接入，当前仍读取 Mock 数据。
 
 响应：
 
@@ -309,6 +315,8 @@ backend/
 
 ### `GET /api/mistakes`
 
+实现状态：尚未实现。以下内容是后续实现必须遵循的接口契约。
+
 返回当前用户的错题分页列表。
 
 | 查询参数   | 必填 | 说明                             |
@@ -336,6 +344,8 @@ backend/
 ```
 
 ### `GET /api/mistakes/{id}`
+
+实现状态：后端及 Gateway 路由已实现；前端详情页尚未调用该接口。
 
 返回错题详情。不存在或不属于当前用户时统一返回 `404 MISTAKE_NOT_FOUND`，避免泄露其他用户的数据。
 
@@ -372,9 +382,14 @@ backend/
 - `image`、`analysis` 和 `failureMessage` 根据实际状态允许为 `null`。
 - Garage Bucket 保持私有，数据库只保存 Object Key，不保存签名 URL。
 - 因前端使用 Bearer Token，普通 `<img>` 标签无法附加 `Authorization` 请求头，所以详情返回短期有效的预签名图片 URL。
-- `confidence` 是 `0～100` 的整数；当前前端写死的 94% 应改为读取该字段。
+- `confidence` 是 `0～100` 的整数；前端展示已改为读取该字段，但当前数据源仍是 Mock。
+- Mapper 使用 `id + currentUserId + ACTIVE` 一次性限定查询范围；不存在、已归档和属于其他用户三种情况使用同一个 `404 MISTAKE_NOT_FOUND`。
+- `personal_questions.status` 表示记录生命周期（`ACTIVE/ARCHIVED`），`analysis_status` 才映射为接口中的分析状态。
+- 数据库字段和约束由 `sql_table/003_add_mistake_analysis.sql` 管理；分析完成、分析失败和掌握状态之间的一致性同时受数据库约束保护。
 
 ### `POST /api/mistakes`
+
+实现状态：后端及 Gateway 路由已实现，前端尚未接入。接口会完成文件校验、Garage 上传、额度扣减、错题创建和 Outbox 写入；Outbox 发布器会使用 RabbitMQ Publisher Confirm 重试发布。异步分析 Worker 尚未实现，因此消息发布后暂时不会生成分析结果。
 
 创建错题、扣减 1 次额度并开始异步分析。请求类型为 `multipart/form-data`。
 
@@ -389,6 +404,14 @@ backend/
 | `image`      | file   | 条件必填 | PNG/JPEG/WEBP，最大 10MB；与 `text` 至少提供一个 |
 
 后端必须检查文件真实内容，不能只信扩展名或客户端提供的 MIME。图片上传 Garage 成功后，错题记录、额度扣减和待发布事件在同一数据库事务中提交，再由 Outbox 发布器发送 RabbitMQ 分析消息；消息只传 `mistakeId`，不传图片二进制。这样 RabbitMQ 暂时不可用时不会出现已扣额度但任务永久丢失的问题。
+
+当前实现细节：
+
+- 用户额度行使用 `SELECT ... FOR UPDATE` 锁定，并在同一事务中扣减，避免并发请求透支额度。
+- Garage 上传发生在数据库写入前；上传成功后注册事务同步回调，数据库回滚或提交失败时尽力删除刚上传的对象。
+- 数据库事务原子提交额度扣减、`personal_questions` 和 `mistake_outbox_events`，任一步失败都会整体回滚。
+- Outbox 发布失败时保留 `PENDING` 状态并指数退避重试，最长退避 300 秒。
+- RabbitMQ 消息体只包含 `mistakeId`；Outbox ID 放在消息 `messageId` 中，供后续消费者实现幂等处理。
 
 成功返回 HTTP `202 Accepted`：
 
@@ -424,6 +447,8 @@ backend/
 
 ### `PATCH /api/mistakes/{id}/mastery`
 
+实现状态：`UpdateMasteryDTO` 已定义，接口尚未实现。
+
 标记或取消标记“已掌握”。
 
 请求：
@@ -437,6 +462,8 @@ backend/
 成功返回更新后的 `ApiResponse<MistakeSummaryVO>`。只有 `completed` 状态允许标记，否则返回 `409 ANALYSIS_NOT_COMPLETED`。
 
 ### 图片存储说明
+
+详情查询的图片预签名读取和 `POST /api/mistakes` 的原图上传均已实现。
 
 Garage 配置：
 
@@ -456,6 +483,8 @@ users/{userId}/mistakes/{mistakeId}/original.{ext}
 Object Key、原始文件名、内容类型、大小和 SHA-256 写入数据库；图片二进制只保存在 Garage，不写入 PostgreSQL、Redis、RabbitMQ 或日志。
 
 ## 支付与额度演示
+
+实现状态：尚未实现。本节保留为后续 Payment Service 的目标契约。
 
 ### `GET /api/payments/plans`
 
@@ -523,7 +552,7 @@ Object Key、原始文件名、内容类型、大小和 SHA-256 写入数据库�
 3. 当前上传表单虽然收集了 `text`，但没有传给 `api.submit`；“你的答案”也没有绑定状态，需要补上 `text` 和 `userAnswer`。
 4. 列表搜索、学科筛选、状态筛选和排序目前只做了部分本地效果，需要改为上述查询参数。
 5. Dashboard 的日期、平均正确率、变化比例、趋势图和待复习数量目前存在硬编码，需要读取统计接口。
-6. 详情页的“置信度 94%”是硬编码，“标记为已掌握”按钮没有请求，需要接入详情字段和 mastery 接口。
+6. 详情页置信度已读取 `analysis.confidence`，但详情数据仍来自 Mock；需要接入详情接口，“标记为已掌握”按钮也需要接入 mastery 接口。
 7. `failed` 状态当前会被错误显示为“排队中”，接入真实状态前需要补充失败样式和重试提示。
 8. 个人资料保存按钮目前无请求，需要接入 `PATCH /api/auth/me`。
 9. 支付页套餐和额度增加目前完全在浏览器内完成，需要改为服务端接口。

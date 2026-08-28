@@ -72,4 +72,65 @@
           AND user_id = #{userId}
           AND status = 'ACTIVE'
     </select>
+
+    <insert id="insert" parameterType="com.learn.mistakeservice.entity.PersonalQuestionEntity">
+        INSERT INTO personal_questions (
+            id,
+            user_id,
+            title,
+            subject,
+            chapter,
+            question_type,
+            stem_text,
+            user_answer,
+            image_object_key,
+            image_original_name,
+            image_content_type,
+            image_size,
+            image_sha256,
+            status,
+            analysis_status,
+            mastered,
+            version,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{id},
+            #{userId},
+            #{title},
+            #{subject},
+            #{chapter},
+            #{questionType},
+            #{stemText},
+            #{userAnswer},
+            #{imageObjectKey},
+            #{imageOriginalName},
+            #{imageContentType},
+            #{imageSize},
+            #{imageSha256},
+            #{status},
+            #{analysisStatus},
+            #{mastered},
+            #{version},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <select id="selectActiveCreditsForUpdate" resultType="java.lang.Integer">
+        SELECT credits
+        FROM users
+        WHERE id = #{userId}
+          AND status = 'ACTIVE'
+        FOR UPDATE
+    </select>
+
+    <update id="decrementCredit">
+        UPDATE users
+        SET credits = credits - 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{userId}
+          AND status = 'ACTIVE'
+          AND credits &gt; 0
+    </update>
 </mapper>

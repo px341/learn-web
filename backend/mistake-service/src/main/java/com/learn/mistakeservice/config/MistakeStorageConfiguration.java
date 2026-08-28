@@ -6,6 +6,7 @@ import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
@@ -15,19 +16,35 @@ import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 public class MistakeStorageConfiguration {
 
     @Bean
+    public S3Client mistakeS3Client(MistakeStorageProperties properties) {
+        return S3Client.builder()
+                .endpointOverride(properties.endpoint())
+                .region(Region.of(properties.region()))
+                .credentialsProvider(credentialsProvider(properties))
+                .serviceConfiguration(serviceConfiguration(properties))
+                .build();
+    }
+
+    @Bean
     public S3Presigner mistakeS3Presigner(MistakeStorageProperties properties) {
         return S3Presigner.builder()
                 .endpointOverride(properties.publicEndpoint())
                 .region(Region.of(properties.region()))
-                .credentialsProvider(StaticCredentialsProvider.create(
-                        AwsBasicCredentials.create(
-                                properties.accessKey(),
-                                properties.secretKey()
-                        )
-                ))
-                .serviceConfiguration(S3Configuration.builder()
-                        .pathStyleAccessEnabled(properties.pathStyleAccess())
-                        .build())
+                .credentialsProvider(credentialsProvider(properties))
+                .serviceConfiguration(serviceConfiguration(properties))
+                .build();
+    }
+
+    private StaticCredentialsProvider credentialsProvider(MistakeStorageProperties properties) {
+        return StaticCredentialsProvider.create(AwsBasicCredentials.create(
+                properties.accessKey(),
+                properties.secretKey()
+        ));
+    }
+
+    private S3Configuration serviceConfiguration(MistakeStorageProperties properties) {
+        return S3Configuration.builder()
+                .pathStyleAccessEnabled(properties.pathStyleAccess())
                 .build();
     }
 }
