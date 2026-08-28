@@ -1,8 +1,10 @@
 package com.learn.mistakeservice.entity;
 
+import com.learn.mistakeservice.model.AnalysisStatus;
 import lombok.Data;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -23,6 +25,7 @@ public class PersonalQuestionEntity {
     private String chapter;
     private String questionType;
     private String stemText;
+    private String userAnswer;
 
     private String imageObjectKey;
     private String imageOriginalName;
@@ -30,7 +33,20 @@ public class PersonalQuestionEntity {
     private Long imageSize;
     private String imageSha256;
 
+    /** 记录生命周期，只允许 ACTIVE/ARCHIVED；不直接作为接口 status 返回。 */
     private String status;
+
+    private AnalysisStatus analysisStatus;
+    private boolean mastered;
+
+    private String analysisSummary;
+    private List<String> analysisKnowledge;
+    private List<String> analysisSteps;
+    private String analysisSuggestion;
+    private String analysisAnswer;
+    private Integer analysisConfidence;
+    private String failureMessage;
+
     private Integer version;
     private Instant createdAt;
     private Instant updatedAt;

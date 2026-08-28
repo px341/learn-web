@@ -19,7 +19,7 @@ spring:
 
 mybatis:
   mapper-locations: classpath:/mapper/*.xml
-  type-handlers-package: com.learn.auth.mybatis
+  type-handlers-package: com.learn.mistakeservice.mybatis
 
 security:
   jwt:

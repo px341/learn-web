@@ -21,6 +21,7 @@ const seed: Mistake[] = [
       ],
       suggestion: "建议重新练习 3 道顶点式变形题，重点关注 a 的符号。",
       answer: "当 a > 0 时有最小值 k；当 a < 0 时有最大值 k。",
+      confidence: 94,
     },
   },
   {
@@ -42,6 +43,7 @@ const seed: Mistake[] = [
       ],
       suggestion: "画受力图时逐项检查接触面和约束条件。",
       answer: "合外力应包含沿运动方向的摩擦力分量。",
+      confidence: 91,
     },
   },
   {
@@ -73,6 +75,7 @@ const seed: Mistake[] = [
       ],
       suggestion: "完成结构式后做一次碳四价检查。",
       answer: "结构式中每个碳原子均需满足四条价键。",
+      confidence: 89,
     },
   },
 ];
@@ -132,6 +135,7 @@ export const api = {
         ],
         suggestion: "把这类题加入本周复习计划，完成两道同类型练习。",
         answer: "先明确题目条件，再选择对应方法逐步推导。",
+        confidence: 90,
       };
       persist();
       window.dispatchEvent(new Event("mock-update"));

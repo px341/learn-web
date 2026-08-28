@@ -21,17 +21,16 @@
 
     <select id="selectSummary" resultMap="DashboardSummaryResultMap">
         SELECT
-            COUNT(*) FILTER (WHERE status = 'ACTIVE') AS total,
+            COUNT(*) AS total,
             COUNT(*) FILTER (
-                WHERE status = 'ACTIVE'
-                  AND created_at &gt;= #{currentPeriodStart}
+                WHERE created_at &gt;= #{currentPeriodStart}
             ) AS weekly_new,
             COUNT(*) FILTER (
-                WHERE status = 'ACTIVE'
-                  AND created_at &lt; #{currentPeriodStart}
+                WHERE created_at &lt; #{currentPeriodStart}
             ) AS previous_total
         FROM personal_questions
         WHERE user_id = #{userId}
+          AND status = 'ACTIVE'
     </select>
 
     <select id="selectQuestionTypeCounts" resultMap="QuestionTypeCountResultMap">

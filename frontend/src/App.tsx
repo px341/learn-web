@@ -863,7 +863,9 @@ function MistakeDetail() {
                 <span className="tag tag-purple">
                   <Sparkles size={13} /> AI 分析完成
                 </span>
-                <span className="confidence">置信度 94%</span>
+                <span className="confidence">
+                  置信度 {m.analysis?.confidence ?? 0}%
+                </span>
               </div>
               <h2>这道题，你卡在了哪里？</h2>
               <p className="analysis-summary">{m.analysis?.summary}</p>

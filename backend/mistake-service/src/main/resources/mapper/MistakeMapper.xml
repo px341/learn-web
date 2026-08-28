@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.learn.mistakeservice.mapper.MistakeMapper">
+    <resultMap id="PersonalQuestionResultMap"
+               type="com.learn.mistakeservice.entity.PersonalQuestionEntity">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="matchedOfficialQuestionId" column="matched_official_question_id"/>
+        <result property="title" column="title"/>
+        <result property="subject" column="subject"/>
+        <result property="chapter" column="chapter"/>
+        <result property="questionType" column="question_type"/>
+        <result property="stemText" column="stem_text"/>
+        <result property="userAnswer" column="user_answer"/>
+        <result property="imageObjectKey" column="image_object_key"/>
+        <result property="imageOriginalName" column="image_original_name"/>
+        <result property="imageContentType" column="image_content_type"/>
+        <result property="imageSize" column="image_size"/>
+        <result property="imageSha256" column="image_sha256"/>
+        <result property="status" column="status"/>
+        <result property="analysisStatus" column="analysis_status"
+                javaType="com.learn.mistakeservice.model.AnalysisStatus"/>
+        <result property="mastered" column="mastered"/>
+        <result property="analysisSummary" column="analysis_summary"/>
+        <result property="analysisKnowledge" column="analysis_knowledge"
+                typeHandler="com.learn.mistakeservice.mybatis.StringListJsonTypeHandler"/>
+        <result property="analysisSteps" column="analysis_steps"
+                typeHandler="com.learn.mistakeservice.mybatis.StringListJsonTypeHandler"/>
+        <result property="analysisSuggestion" column="analysis_suggestion"/>
+        <result property="analysisAnswer" column="analysis_answer"/>
+        <result property="analysisConfidence" column="analysis_confidence"/>
+        <result property="failureMessage" column="failure_message"/>
+        <result property="version" column="version"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectActiveByIdAndUserId" resultMap="PersonalQuestionResultMap">
+        SELECT
+            id,
+            user_id,
+            matched_official_question_id,
+            title,
+            subject,
+            chapter,
+            question_type,
+            stem_text,
+            user_answer,
+            image_object_key,
+            image_original_name,
+            image_content_type,
+            image_size,
+            image_sha256,
+            status,
+            analysis_status,
+            mastered,
+            analysis_summary,
+            analysis_knowledge,
+            analysis_steps,
+            analysis_suggestion,
+            analysis_answer,
+            analysis_confidence,
+            failure_message,
+            version,
+            created_at,
+            updated_at
+        FROM personal_questions
+        WHERE id = #{id}
+          AND user_id = #{userId}
+          AND status = 'ACTIVE'
+    </select>
+</mapper>

@@ -76,10 +76,12 @@ storage:
 | --- | --- | --- |
 | `001_create_users.sql` | `users` | 用户、额度和认证状态 |
 | `002_create_questions.sql` | `official_questions`、`personal_questions` | 官方题与个人题；个人题可选择性匹配官方题 |
+| `003_add_mistake_analysis.sql` | `personal_questions` | 个人错题的分析状态、分析结果、掌握状态和用户答案 |
 
 已有数据卷不会再次执行 Docker 初始化脚本，可手动导入：
 
 ```bash
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/001_create_users.sql
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/002_create_questions.sql
+docker compose exec -T postgres psql -U postgres -d learn < sql_table/003_add_mistake_analysis.sql
 ```

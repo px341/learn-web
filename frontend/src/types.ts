@@ -17,6 +17,7 @@ export type MistakeAnalysis = {
   steps: string[];
   suggestion: string;
   answer: string;
+  confidence: number;
 };
 export type User = {
   id: string;

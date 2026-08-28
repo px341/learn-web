@@ -34,15 +34,16 @@ public class DashboardServiceImpl implements DashboardService {
         return new DashboardStatsVO(
                 summary.getTotal(),
                 summary.getWeeklyNew(),
-                calculateChangePercent(summary.getTotal(), summary.getPreviousTotal()),
+                calculateChangePercent(summary.getWeeklyNew(), summary.getPreviousTotal()),
                 questionTypeCounts
         );
     }
 
-    private int calculateChangePercent(long currentTotal, long previousTotal) {
+    /** 近 7 天新增量相对于此前累计量的变化百分比。 */
+    private int calculateChangePercent(long weeklyNew, long previousTotal) {
         if (previousTotal == 0) {
-            return currentTotal == 0 ? 0 : 100;
+            return weeklyNew == 0 ? 0 : 100;
         }
-        return (int) Math.round((currentTotal - previousTotal) * 100.0 / previousTotal);
+        return (int) Math.round(weeklyNew * 100.0 / previousTotal);
     }
 }
