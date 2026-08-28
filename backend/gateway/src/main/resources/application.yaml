@@ -24,6 +24,13 @@ spring:
                 - Path=/v3/api-docs/auth-service
               filters:
                 - SetPath=/v3/api-docs
+            # 将统一文档地址改写为 Mistake Service 自己的 OpenAPI 文档地址。
+            - id: mistake-service-openapi
+              uri: lb://mistake-service
+              predicates:
+                - Path=/v3/api-docs/mistake-service
+              filters:
+                - SetPath=/v3/api-docs
             - id: auth-service
               uri: lb://auth-service
               predicates:
@@ -35,6 +42,10 @@ spring:
                     redis-rate-limiter.replenishRate: 1
                     redis-rate-limiter.burstCapacity: 5
                     redis-rate-limiter.requestedTokens: 1
+            - id: mistake-service
+              uri: lb://mistake-service
+              predicates:
+                - Path=/api/dashboard/**,/api/mistakes/**
 
 security:
   jwt:
@@ -49,9 +60,13 @@ springdoc:
     path: /swagger-ui.html
     enabled: ${SWAGGER_ENABLED:true}
     try-it-out-enabled: true
+    # 在聚合 Swagger UI 刷新页面或切换服务后保留已授权的 JWT。
+    persist-authorization: true
     urls:
       - name: auth-service
         url: /v3/api-docs/auth-service
+      - name: mistake-service
+        url: /v3/api-docs/mistake-service
 
 management:
   endpoints:
