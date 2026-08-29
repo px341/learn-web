@@ -1,6 +1,7 @@
 package com.learn.mistakeservice.service.imple;
 
 import com.learn.mistakeservice.dto.CreateMistakeDTO;
+import com.learn.mistakeservice.dto.UpdateMasteryDTO;
 import com.learn.mistakeservice.entity.PersonalQuestionEntity;
 import com.learn.mistakeservice.exception.InsufficientCreditsException;
 import com.learn.mistakeservice.exception.MistakeContentRequiredException;
@@ -21,6 +22,7 @@ import com.learn.mistakeservice.vo.MistakeDetailVO;
 import com.learn.mistakeservice.vo.MistakeImageVO;
 import com.learn.mistakeservice.vo.MistakeSummaryVO;
 import com.learn.security.currentuser.CurrentUserProvider;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -106,6 +108,42 @@ public class MistakeServiceImpl implements MistakeService {
         );
         return new CreateMistakeVO(toSummary(mistake), creditsRemaining);
     }
+
+    /**
+     * 标记或取消标记“已掌握”
+     *
+     * <p>主要流程：更新状态。
+     * 方法返回时仅表示是否成功。</p>
+     */
+    @Override
+    @Transactional
+    public MistakeSummaryVO updateMastery(UUID id, @Valid UpdateMasteryDTO updateMasteryDTO) {
+        UUID userId = currentUserProvider.getUserId();
+        PersonalQuestionEntity mistake = mistakeMapper
+                .selectActiveByIdAndUserId(id, userId);
+        if (mistake == null) {
+            throw new MistakeNotFoundException();
+        }
+        if (mistake.isMastered() != updateMasteryDTO.mastered()) {
+            int ret = mistakeMapper.updateMasteredByIdAndUserId(id, userId);
+            if (ret == 0) {
+                throw new MistakeNotFoundException();
+            }
+            mistake.setMastered(updateMasteryDTO.mastered());
+        }
+
+        return new MistakeSummaryVO(
+                mistake.getId(),
+                mistake.getTitle(),
+                mistake.getSubject(),
+                mistake.getChapter(),
+                mistake.getQuestionType(),
+                mistake.getAnalysisStatus(),
+                mistake.isMastered(),
+                mistake.getCreatedAt()
+        );
+    }
+
 
     /**
      * 在当前事务中锁定用户额度记录并扣减一次额度，防止并发请求超扣。

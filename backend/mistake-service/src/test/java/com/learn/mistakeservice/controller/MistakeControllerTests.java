@@ -1,12 +1,14 @@
 package com.learn.mistakeservice.controller;
 
 import com.learn.mistakeservice.dto.CreateMistakeDTO;
+import com.learn.mistakeservice.dto.UpdateMasteryDTO;
 import com.learn.mistakeservice.exception.MistakeExceptionHandler;
 import com.learn.mistakeservice.model.AnalysisStatus;
 import com.learn.mistakeservice.service.MistakeService;
 import com.learn.mistakeservice.vo.CreateMistakeVO;
 import com.learn.mistakeservice.vo.MistakeDetailVO;
 import com.learn.mistakeservice.vo.MistakeSummaryVO;
+import jakarta.validation.Valid;
 import org.junit.jupiter.api.Test;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -45,6 +47,11 @@ class MistakeControllerTests {
                         ),
                         2
                 );
+            }
+
+            @Override
+            public MistakeSummaryVO updateMastery(UUID id, UpdateMasteryDTO updateMasteryDTO) {
+                return null;
             }
         };
         MockMvc mockMvc = MockMvcBuilders.standaloneSetup(

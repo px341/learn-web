@@ -133,4 +133,14 @@
           AND status = 'ACTIVE'
           AND credits &gt; 0
     </update>
+
+    <update id="updateMasteredByIdAndUserId">
+        UPDATE personal_questions
+        SET mastered = !mastered,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+            AND user_id = #{userId}
+            AND status = 'ACTIVE'
+    </update>
+
 </mapper>

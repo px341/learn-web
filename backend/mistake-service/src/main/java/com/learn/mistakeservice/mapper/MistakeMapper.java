@@ -9,7 +9,9 @@ import java.util.UUID;
 @Mapper
 public interface MistakeMapper {
 
-    /** 同时限定主键和用户 ID；其他用户的记录与不存在记录都返回 null。 */
+    /**
+     * 同时限定主键和用户 ID；其他用户的记录与不存在记录都返回 null。
+     */
     PersonalQuestionEntity selectActiveByIdAndUserId(
             @Param("id") UUID id,
             @Param("userId") UUID userId
@@ -20,4 +22,9 @@ public interface MistakeMapper {
     Integer selectActiveCreditsForUpdate(@Param("userId") UUID userId);
 
     int decrementCredit(@Param("userId") UUID userId);
+
+    int updateMasteredByIdAndUserId(
+            @Param("id") UUID id,
+            @Param("userId") UUID userId
+    );
 }
