@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.learn.paymentservice.mapper.PaymentOrderMapper">
+    <resultMap id="PaymentOrderResultMap"
+               type="com.learn.paymentservice.entity.PaymentOrderEntity">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="planId" column="plan_id"/>
+        <result property="idempotencyKey" column="idempotency_key"/>
+        <result property="planName" column="plan_name"/>
+        <result property="creditsAdded" column="credits_added"/>
+        <result property="amountFen" column="amount_fen"/>
+        <result property="currency" column="currency"/>
+        <result property="provider" column="provider"/>
+        <result property="providerOrderId" column="provider_order_id"/>
+        <result property="status" column="status"
+                javaType="com.learn.paymentservice.model.PaymentStatus"/>
+        <result property="failureCode" column="failure_code"/>
+        <result property="failureMessage" column="failure_message"/>
+        <result property="paidAt" column="paid_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <select id="selectActiveCreditsForUpdate" resultType="java.lang.Integer">
+        SELECT credits
+        FROM users
+        WHERE id = #{userId}
+          AND status = 'ACTIVE'
+        FOR UPDATE
+    </select>
+
+    <select id="selectByUserIdAndIdempotencyKey" resultMap="PaymentOrderResultMap">
+        SELECT
+            id,
+            user_id,
+            plan_id,
+            idempotency_key,
+            plan_name,
+            credits_added,
+            amount_fen,
+            currency,
+            provider,
+            provider_order_id,
+            status,
+            failure_code,
+            failure_message,
+            paid_at,
+            created_at,
+            updated_at
+        FROM payment_orders
+        WHERE user_id = #{userId}
+          AND idempotency_key = #{idempotencyKey}
+    </select>
+
+    <insert id="insert" parameterType="com.learn.paymentservice.entity.PaymentOrderEntity">
+        INSERT INTO payment_orders (
+            id,
+            user_id,
+            plan_id,
+            idempotency_key,
+            plan_name,
+            credits_added,
+            amount_fen,
+            currency,
+            provider,
+            provider_order_id,
+            status,
+            failure_code,
+            failure_message,
+            paid_at,
+            created_at,
+            updated_at
+        ) VALUES (
+            #{id},
+            #{userId},
+            #{planId},
+            #{idempotencyKey},
+            #{planName},
+            #{creditsAdded},
+            #{amountFen},
+            #{currency},
+            #{provider},
+            #{providerOrderId},
+            #{status},
+            #{failureCode},
+            #{failureMessage},
+            #{paidAt},
+            #{createdAt},
+            #{updatedAt}
+        )
+    </insert>
+
+    <update id="incrementCredits">
+        UPDATE users
+        SET credits = credits + #{credits},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{userId}
+          AND status = 'ACTIVE'
+    </update>
+</mapper>

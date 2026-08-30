@@ -1,6 +1,6 @@
 # 错题实验室
 
-当前仓库包含 React 前端，以及 Java、Maven、Spring Cloud 实现的 Gateway、Auth Service 和 Mistake Service。
+当前仓库包含 React 前端，以及 Java、Maven、Spring Cloud 实现的 Gateway、Auth Service、Mistake Service 和 Payment Service。
 
 ```bash
 cd frontend
@@ -8,7 +8,7 @@ npm install
 npm run dev
 ```
 
-API 对接契约和逐项实现状态见 [API.md](./API.md)。前端认证与头像已接入真实 API；错题和 Dashboard 页面仍主要使用 `frontend/src/mock.ts`，支付与异步分析 Worker 尚未实现。
+API 对接契约和逐项实现状态见 [API.md](./API.md)。前端认证与头像已接入真实 API；错题、Dashboard 和支付页面仍主要使用 `frontend/src/mock.ts`，异步分析 Worker 与正式支付平台尚未实现。
 
 ## 本地端口
 
@@ -18,6 +18,7 @@ API 对接契约和逐项实现状态见 [API.md](./API.md)。前端认证与头
 | `18081` | Gateway | Nginx 将 `/api/**` 转发到此端口 |
 | `18082` | Auth Service | 登录、注册服务，由 Gateway 通过 Nacos 转发 |
 | `18083` | Nacos Console | 本地 Nacos 管理页面 |
+| `18085` | Payment Service | 套餐查询和本地模拟支付，由 Gateway 通过 Nacos 转发 |
 | `8848` | Nacos Server | Java 客户端注册与发现端口 |
 | `9848` | Nacos gRPC | Nacos 客户端通信端口，由 Nacos 协议固定使用 |
 | `3900` | Garage S3 API | 错题图片对象存储，仅监听本机 |
@@ -35,6 +36,9 @@ mvn -f backend/pom.xml -pl auth-service spring-boot:run
 
 # 3. 启动 Gateway
 mvn -f backend/pom.xml -pl gateway spring-boot:run
+
+# 4. 启动 Payment Service；模拟支付仅在本地显式开启
+PAYMENT_MOCK_ENABLED=true mvn -f backend/pom.xml -pl payment-service spring-boot:run
 ```
 
 在 `/etc/hosts` 中加入 `127.0.0.1 learnweb.test` 后，浏览器访问 `http://learnweb.test`；也可以继续使用备用地址 `http://localhost:18080`。`.test` 是保留给测试用途的顶级域名，不会与公网网站冲突。Nacos 控制台位于 `http://localhost:18083`。本地 Compose 中关闭了 Nacos 鉴权，仅用于开发环境。
@@ -78,6 +82,7 @@ storage:
 | `002_create_questions.sql` | `official_questions`、`personal_questions` | 官方题与个人题；个人题可选择性匹配官方题 |
 | `003_add_mistake_analysis.sql` | `personal_questions` | 个人错题的分析状态、分析结果、掌握状态和用户答案 |
 | `004_create_mistake_outbox.sql` | `mistake_outbox_events` | 可靠发布错题分析任务的事务 Outbox |
+| `005_create_payments.sql` | `payment_plans`、`payment_orders` | 服务端套餐配置、幂等支付订单及金额/额度快照 |
 
 已有数据卷不会再次执行 Docker 初始化脚本，可手动导入：
 
@@ -86,4 +91,5 @@ docker compose exec -T postgres psql -U postgres -d learn < sql_table/001_create
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/002_create_questions.sql
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/003_add_mistake_analysis.sql
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/004_create_mistake_outbox.sql
+docker compose exec -T postgres psql -U postgres -d learn < sql_table/005_create_payments.sql
 ```

@@ -17,10 +17,10 @@
 | 错题详情     | 仍读取 Mock；置信度已改为读取 `analysis.confidence` | 已实现 `GET /api/mistakes/{id}`、用户隔离和图片预签名              | 前端接入详情接口及轮询                |
 | 错题上传     | 使用 Mock，图片以 Base64 保存                     | 已实现 `POST /api/mistakes`、额度事务、Garage 上传和 Outbox         | 前端接入                              |
 | 分析进度     | 前端定时器模拟状态变化                            | Outbox 发布已实现，异步分析 Worker 尚未实现                         | 实现 Worker 和前端轮询                |
-| 标记已掌握   | 按钮尚未发送请求                                  | 已定义 `UpdateMasteryDTO`，接口尚未实现                            | 实现 mastery 接口                     |
-| 额度、支付   | 前端仍直接修改本地额度                            | 尚未实现                                                           | 额度改为服务端事务管理                |
+| 标记已掌握   | 按钮尚未发送请求                                  | 已实现 `PATCH /api/mistakes/{id}/mastery`                          | 前端接入 mastery 接口                 |
+| 额度、支付   | 前端仍直接修改本地额度                            | 已实现套餐查询、幂等模拟支付及事务入账                              | 前端接入；正式支付接入支付平台        |
 
-Gateway 已配置 `/api/auth/**`、`/api/dashboard/**` 和 `/api/mistakes/**` 路由，并聚合 Auth Service 与 Mistake Service 的 OpenAPI 文档。支付服务落地后仍需增加对应路由和文档聚合配置。
+Gateway 已配置 `/api/auth/**`、`/api/dashboard/**`、`/api/mistakes/**` 和 `/api/payments/**` 路由，并聚合 Auth Service、Mistake Service 与 Payment Service 的 OpenAPI 文档。
 
 ## 通用约定
 
@@ -484,7 +484,7 @@ Object Key、原始文件名、内容类型、大小和 SHA-256 写入数据库�
 
 ## 支付与额度演示
 
-实现状态：尚未实现。本节保留为后续 Payment Service 的目标契约。
+实现状态：数据库、Payment Service API 和 Gateway 路由已实现；前端接入与正式支付平台尚未实现。模拟支付接口默认关闭，本地或演示环境需显式设置 `PAYMENT_MOCK_ENABLED=true`。
 
 ### `GET /api/payments/plans`
 

@@ -25,6 +25,7 @@
         <module>gateway</module>
         <module>auth-service</module>
         <module>mistake-service</module>
+        <module>payment-service</module>
     </modules>
 
     <properties>

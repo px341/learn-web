@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.learn.paymentservice.mapper.PaymentPlanMapper">
+    <resultMap id="PaymentPlanResultMap"
+               type="com.learn.paymentservice.entity.PaymentPlanEntity">
+        <id property="id" column="id"/>
+        <result property="name" column="name"/>
+        <result property="credits" column="credits"/>
+        <result property="priceFen" column="price_fen"/>
+        <result property="description" column="description"/>
+        <result property="recommended" column="recommended"/>
+        <result property="status" column="status"/>
+        <result property="sortOrder" column="sort_order"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <sql id="PaymentPlanColumns">
+        id,
+        name,
+        credits,
+        price_fen,
+        description,
+        recommended,
+        status,
+        sort_order,
+        created_at,
+        updated_at
+    </sql>
+
+    <select id="selectActivePlans" resultMap="PaymentPlanResultMap">
+        SELECT <include refid="PaymentPlanColumns"/>
+        FROM payment_plans
+        WHERE status = 'ACTIVE'
+        ORDER BY sort_order ASC, id ASC
+    </select>
+
+    <select id="selectActiveById" resultMap="PaymentPlanResultMap">
+        SELECT <include refid="PaymentPlanColumns"/>
+        FROM payment_plans
+        WHERE id = #{planId}
+          AND status = 'ACTIVE'
+    </select>
+</mapper>

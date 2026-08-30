@@ -31,6 +31,13 @@ spring:
                 - Path=/v3/api-docs/mistake-service
               filters:
                 - SetPath=/v3/api-docs
+            # 将统一文档地址改写为 Payment Service 自己的 OpenAPI 文档地址。
+            - id: payment-service-openapi
+              uri: lb://payment-service
+              predicates:
+                - Path=/v3/api-docs/payment-service
+              filters:
+                - SetPath=/v3/api-docs
             - id: auth-service
               uri: lb://auth-service
               predicates:
@@ -46,6 +53,10 @@ spring:
               uri: lb://mistake-service
               predicates:
                 - Path=/api/dashboard/**,/api/mistakes/**
+            - id: payment-service
+              uri: lb://payment-service
+              predicates:
+                - Path=/api/payments/**
 
 security:
   jwt:
@@ -67,6 +78,8 @@ springdoc:
         url: /v3/api-docs/auth-service
       - name: mistake-service
         url: /v3/api-docs/mistake-service
+      - name: payment-service
+        url: /v3/api-docs/payment-service
 
 management:
   endpoints:
