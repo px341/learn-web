@@ -1,13 +1,16 @@
 package com.learn.paymentservice.service;
 
 import com.learn.paymentservice.vo.PaymentPlanVO;
-import com.learn.paymentservice.vo.PaymentResultVO;
+import com.learn.paymentservice.vo.MockPaymentVO;
 
 import java.util.List;
+import java.util.UUID;
 
 public interface PaymentService {
 
     List<PaymentPlanVO> getPlans();
 
-    PaymentResultVO mockPayment(String planId, String idempotencyKey);
+    MockPaymentVO createMockPayment(String planId, String idempotencyKey);
+
+    void completeMockPayment(UUID orderId);
 }

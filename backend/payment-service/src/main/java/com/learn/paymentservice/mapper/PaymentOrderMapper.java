@@ -16,7 +16,17 @@ public interface PaymentOrderMapper {
             @Param("idempotencyKey") String idempotencyKey
     );
 
+    PaymentOrderEntity selectByIdForUpdate(UUID orderId);
+
     int insert(PaymentOrderEntity order);
 
     int incrementCredits(@Param("userId") UUID userId, @Param("credits") int credits);
+
+    int markPaid(@Param("orderId") UUID orderId, @Param("paidAt") java.time.Instant paidAt);
+
+    int markFailed(
+            @Param("orderId") UUID orderId,
+            @Param("failureCode") String failureCode,
+            @Param("failureMessage") String failureMessage
+    );
 }

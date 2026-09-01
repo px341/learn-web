@@ -6,7 +6,13 @@ import lombok.Data;
 import java.time.Instant;
 import java.util.UUID;
 
-/** payment_orders 表的内部持久化对象，包含下单时的套餐和金额快照。 */
+/**
+ * {@code payment_orders} 表的内部持久化对象。
+ *
+ * <p>套餐名称、额度、金额和币种均保存下单时的服务端快照。异步支付请求创建时
+ * 状态为 {@link PaymentStatus#PENDING}；支付成功事件处理完成后更新为
+ * {@link PaymentStatus#PAID}，并设置 {@code paidAt}。</p>
+ */
 @Data
 public class PaymentOrderEntity {
     private UUID id;

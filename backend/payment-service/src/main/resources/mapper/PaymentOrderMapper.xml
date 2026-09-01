@@ -56,6 +56,29 @@
           AND idempotency_key = #{idempotencyKey}
     </select>
 
+    <select id="selectByIdForUpdate" resultMap="PaymentOrderResultMap">
+        SELECT
+            id,
+            user_id,
+            plan_id,
+            idempotency_key,
+            plan_name,
+            credits_added,
+            amount_fen,
+            currency,
+            provider,
+            provider_order_id,
+            status,
+            failure_code,
+            failure_message,
+            paid_at,
+            created_at,
+            updated_at
+        FROM payment_orders
+        WHERE id = #{orderId}
+        FOR UPDATE
+    </select>
+
     <insert id="insert" parameterType="com.learn.paymentservice.entity.PaymentOrderEntity">
         INSERT INTO payment_orders (
             id,
@@ -100,5 +123,24 @@
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{userId}
           AND status = 'ACTIVE'
+    </update>
+
+    <update id="markPaid">
+        UPDATE payment_orders
+        SET status = 'PAID',
+            paid_at = #{paidAt},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{orderId}
+          AND status = 'PENDING'
+    </update>
+
+    <update id="markFailed">
+        UPDATE payment_orders
+        SET status = 'FAILED',
+            failure_code = #{failureCode},
+            failure_message = #{failureMessage},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{orderId}
+          AND status = 'PENDING'
     </update>
 </mapper>

@@ -10,8 +10,8 @@ import com.learn.paymentservice.mapper.PaymentOrderMapper;
 import com.learn.paymentservice.mapper.PaymentPlanMapper;
 import com.learn.paymentservice.model.PaymentStatus;
 import com.learn.paymentservice.service.PaymentService;
+import com.learn.paymentservice.vo.MockPaymentVO;
 import com.learn.paymentservice.vo.PaymentPlanVO;
-import com.learn.paymentservice.vo.PaymentResultVO;
 import com.learn.security.currentuser.CurrentUserProvider;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -39,7 +39,7 @@ public class PaymentServiceImpl implements PaymentService {
 
     @Override
     @Transactional
-    public PaymentResultVO mockPayment(String planId, String idempotencyKey) {
+    public MockPaymentVO createMockPayment(String planId, String idempotencyKey) {
         String normalizedPlanId = normalizePlanId(planId);
         String normalizedKey = validateIdempotencyKey(idempotencyKey);
         UUID userId = currentUserProvider.getUserId();
@@ -56,7 +56,7 @@ public class PaymentServiceImpl implements PaymentService {
             if (!existing.getPlanId().equals(normalizedPlanId)) {
                 throw new PaymentIdempotencyConflictException();
             }
-            return toResultVO(existing, creditsBeforePayment);
+            return MockPaymentVO.from(existing);
         }
 
         PaymentPlanEntity plan = paymentPlanMapper.selectActiveById(normalizedPlanId);
@@ -75,19 +75,48 @@ public class PaymentServiceImpl implements PaymentService {
         order.setAmountFen(plan.getPriceFen());
         order.setCurrency("CNY");
         order.setProvider("MOCK");
-        order.setStatus(PaymentStatus.PAID);
-        order.setPaidAt(now);
+        order.setStatus(PaymentStatus.PENDING);
         order.setCreatedAt(now);
         order.setUpdatedAt(now);
 
         if (paymentOrderMapper.insert(order) != 1) {
             throw new IllegalStateException("创建支付订单失败");
         }
-        if (paymentOrderMapper.incrementCredits(userId, plan.getCredits()) != 1) {
-            throw new IllegalStateException("增加用户额度失败");
+        return MockPaymentVO.from(order);
+    }
+
+    @Override
+    @Transactional
+    public void completeMockPayment(UUID orderId) {
+        PaymentOrderEntity order = paymentOrderMapper.selectByIdForUpdate(orderId);
+        if (order == null || order.getStatus() != PaymentStatus.PENDING) {
+            return;
         }
 
-        return toResultVO(order, Math.addExact(creditsBeforePayment, plan.getCredits()));
+        Integer currentCredits = paymentOrderMapper
+                .selectActiveCreditsForUpdate(order.getUserId());
+        if (currentCredits == null) {
+            if (paymentOrderMapper.markFailed(
+                    orderId,
+                    "CURRENT_USER_UNAVAILABLE",
+                    "当前用户不可用"
+            ) != 1) {
+                throw new IllegalStateException("更新支付失败状态失败");
+            }
+            return;
+        }
+
+        // 提前检查整数溢出；异常会使本次消费事务整体回滚。
+        Math.addExact(currentCredits, order.getCreditsAdded());
+        if (paymentOrderMapper.incrementCredits(
+                order.getUserId(),
+                order.getCreditsAdded()
+        ) != 1) {
+            throw new IllegalStateException("增加用户额度失败");
+        }
+        if (paymentOrderMapper.markPaid(orderId, Instant.now()) != 1) {
+            throw new IllegalStateException("更新支付订单状态失败");
+        }
     }
 
     private PaymentPlanVO toPlanVO(PaymentPlanEntity plan) {
@@ -98,16 +127,6 @@ public class PaymentServiceImpl implements PaymentService {
                 plan.getPriceFen(),
                 plan.getDescription(),
                 plan.isRecommended()
-        );
-    }
-
-    private PaymentResultVO toResultVO(PaymentOrderEntity order, int creditsRemaining) {
-        return new PaymentResultVO(
-                order.getId(),
-                order.getStatus(),
-                order.getCreditsAdded(),
-                creditsRemaining,
-                order.getPaidAt()
         );
     }
 

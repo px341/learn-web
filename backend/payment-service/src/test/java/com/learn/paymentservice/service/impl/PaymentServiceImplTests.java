@@ -9,8 +9,8 @@ import com.learn.paymentservice.exception.PlanNotFoundException;
 import com.learn.paymentservice.mapper.PaymentOrderMapper;
 import com.learn.paymentservice.mapper.PaymentPlanMapper;
 import com.learn.paymentservice.model.PaymentStatus;
+import com.learn.paymentservice.vo.MockPaymentVO;
 import com.learn.paymentservice.vo.PaymentPlanVO;
-import com.learn.paymentservice.vo.PaymentResultVO;
 import com.learn.security.currentuser.CurrentUserProvider;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -72,19 +72,18 @@ class PaymentServiceImplTests {
     }
 
     @Test
-    void createsPaidOrderAndAddsCreditsExactlyOnce() {
+    void createsPendingOrderWithoutAddingCredits() {
         PaymentPlanEntity plan = plan("starter", 10, 800, true);
         when(paymentOrderMapper.selectActiveCreditsForUpdate(USER_ID)).thenReturn(3);
         when(paymentPlanMapper.selectActiveById("starter")).thenReturn(plan);
         when(paymentOrderMapper.insert(org.mockito.ArgumentMatchers.any())).thenReturn(1);
-        when(paymentOrderMapper.incrementCredits(USER_ID, 10)).thenReturn(1);
 
-        PaymentResultVO result = service.mockPayment(" starter ", "request-1");
+        MockPaymentVO result = service.createMockPayment(" starter ", "request-1");
 
-        assertThat(result.status()).isEqualTo(PaymentStatus.PAID);
-        assertThat(result.creditsAdded()).isEqualTo(10);
-        assertThat(result.creditsRemaining()).isEqualTo(13);
-        assertThat(result.paidAt()).isNotNull();
+        assertThat(result.status()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(result.credits()).isEqualTo(10);
+        assertThat(result.amountFen()).isEqualTo(800);
+        assertThat(result.createdAt()).isNotNull();
 
         ArgumentCaptor<PaymentOrderEntity> orderCaptor =
                 ArgumentCaptor.forClass(PaymentOrderEntity.class);
@@ -95,7 +94,8 @@ class PaymentServiceImplTests {
         assertThat(order.getIdempotencyKey()).isEqualTo("request-1");
         assertThat(order.getAmountFen()).isEqualTo(800);
         assertThat(order.getProvider()).isEqualTo("MOCK");
-        assertThat(order.getStatus()).isEqualTo(PaymentStatus.PAID);
+        assertThat(order.getStatus()).isEqualTo(PaymentStatus.PENDING);
+        assertThat(order.getPaidAt()).isNull();
 
         InOrder writeOrder = inOrder(paymentOrderMapper, paymentPlanMapper);
         writeOrder.verify(paymentOrderMapper).selectActiveCreditsForUpdate(USER_ID);
@@ -103,7 +103,7 @@ class PaymentServiceImplTests {
                 .selectByUserIdAndIdempotencyKey(USER_ID, "request-1");
         writeOrder.verify(paymentPlanMapper).selectActiveById("starter");
         writeOrder.verify(paymentOrderMapper).insert(order);
-        writeOrder.verify(paymentOrderMapper).incrementCredits(USER_ID, 10);
+        verify(paymentOrderMapper, never()).incrementCredits(USER_ID, 10);
     }
 
     @Test
@@ -113,10 +113,10 @@ class PaymentServiceImplTests {
         when(paymentOrderMapper.selectByUserIdAndIdempotencyKey(USER_ID, "request-1"))
                 .thenReturn(existing);
 
-        PaymentResultVO result = service.mockPayment("starter", "request-1");
+        MockPaymentVO result = service.createMockPayment("starter", "request-1");
 
         assertThat(result.orderId()).isEqualTo(existing.getId());
-        assertThat(result.creditsRemaining()).isEqualTo(7);
+        assertThat(result.status()).isEqualTo(PaymentStatus.PAID);
         verify(paymentOrderMapper, never()).insert(org.mockito.ArgumentMatchers.any());
         verify(paymentOrderMapper, never())
                 .incrementCredits(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.anyInt());
@@ -130,7 +130,7 @@ class PaymentServiceImplTests {
         when(paymentOrderMapper.selectByUserIdAndIdempotencyKey(USER_ID, "request-1"))
                 .thenReturn(existing);
 
-        assertThatThrownBy(() -> service.mockPayment("starter", "request-1"))
+        assertThatThrownBy(() -> service.createMockPayment("starter", "request-1"))
                 .isInstanceOf(PaymentIdempotencyConflictException.class);
 
         verify(paymentOrderMapper, never()).insert(org.mockito.ArgumentMatchers.any());
@@ -141,7 +141,7 @@ class PaymentServiceImplTests {
     void rejectsMissingUserBeforeLookingUpPlan() {
         when(paymentOrderMapper.selectActiveCreditsForUpdate(USER_ID)).thenReturn(null);
 
-        assertThatThrownBy(() -> service.mockPayment("starter", "request-1"))
+        assertThatThrownBy(() -> service.createMockPayment("starter", "request-1"))
                 .isInstanceOf(PaymentUserUnavailableException.class);
 
         verifyNoInteractions(paymentPlanMapper);
@@ -151,7 +151,7 @@ class PaymentServiceImplTests {
     void rejectsInactiveOrUnknownPlan() {
         when(paymentOrderMapper.selectActiveCreditsForUpdate(USER_ID)).thenReturn(3);
 
-        assertThatThrownBy(() -> service.mockPayment("missing", "request-1"))
+        assertThatThrownBy(() -> service.createMockPayment("missing", "request-1"))
                 .isInstanceOf(PlanNotFoundException.class);
 
         verify(paymentOrderMapper, never()).insert(org.mockito.ArgumentMatchers.any());
@@ -159,10 +159,82 @@ class PaymentServiceImplTests {
 
     @Test
     void rejectsInvalidIdempotencyKeyBeforeDatabaseAccess() {
-        assertThatThrownBy(() -> service.mockPayment("starter", " "))
+        assertThatThrownBy(() -> service.createMockPayment("starter", " "))
                 .isInstanceOf(InvalidIdempotencyKeyException.class);
 
         verifyNoInteractions(paymentPlanMapper, paymentOrderMapper);
+    }
+
+    @Test
+    void completesPendingOrderAndAddsCredits() {
+        UUID orderId = UUID.randomUUID();
+        PaymentOrderEntity order = pendingOrder(orderId, "starter", "request-1", 10);
+        when(paymentOrderMapper.selectByIdForUpdate(orderId)).thenReturn(order);
+        when(paymentOrderMapper.selectActiveCreditsForUpdate(USER_ID)).thenReturn(3);
+        when(paymentOrderMapper.incrementCredits(USER_ID, 10)).thenReturn(1);
+        when(paymentOrderMapper.markPaid(
+                org.mockito.ArgumentMatchers.eq(orderId),
+                org.mockito.ArgumentMatchers.any(Instant.class)
+        )).thenReturn(1);
+
+        service.completeMockPayment(orderId);
+
+        InOrder writeOrder = inOrder(paymentOrderMapper);
+        writeOrder.verify(paymentOrderMapper).selectByIdForUpdate(orderId);
+        writeOrder.verify(paymentOrderMapper).selectActiveCreditsForUpdate(USER_ID);
+        writeOrder.verify(paymentOrderMapper).incrementCredits(USER_ID, 10);
+        writeOrder.verify(paymentOrderMapper).markPaid(
+                org.mockito.ArgumentMatchers.eq(orderId),
+                org.mockito.ArgumentMatchers.any(Instant.class)
+        );
+        verify(paymentOrderMapper, never()).markFailed(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()
+        );
+    }
+
+    @Test
+    void duplicateMessageDoesNotAddCreditsAgain() {
+        UUID orderId = UUID.randomUUID();
+        when(paymentOrderMapper.selectByIdForUpdate(orderId))
+                .thenReturn(paidOrder("starter", "request-1", 10));
+
+        service.completeMockPayment(orderId);
+
+        verify(paymentOrderMapper, never()).incrementCredits(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt()
+        );
+        verify(paymentOrderMapper, never()).markPaid(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.any()
+        );
+    }
+
+    @Test
+    void marksOrderFailedWhenUserIsUnavailableDuringConsumption() {
+        UUID orderId = UUID.randomUUID();
+        PaymentOrderEntity order = pendingOrder(orderId, "starter", "request-1", 10);
+        when(paymentOrderMapper.selectByIdForUpdate(orderId)).thenReturn(order);
+        when(paymentOrderMapper.selectActiveCreditsForUpdate(USER_ID)).thenReturn(null);
+        when(paymentOrderMapper.markFailed(
+                orderId,
+                "CURRENT_USER_UNAVAILABLE",
+                "当前用户不可用"
+        )).thenReturn(1);
+
+        service.completeMockPayment(orderId);
+
+        verify(paymentOrderMapper).markFailed(
+                orderId,
+                "CURRENT_USER_UNAVAILABLE",
+                "当前用户不可用"
+        );
+        verify(paymentOrderMapper, never()).incrementCredits(
+                org.mockito.ArgumentMatchers.any(),
+                org.mockito.ArgumentMatchers.anyInt()
+        );
     }
 
     private PaymentPlanEntity plan(
@@ -183,14 +255,29 @@ class PaymentServiceImplTests {
     }
 
     private PaymentOrderEntity paidOrder(String planId, String key, int creditsAdded) {
+        PaymentOrderEntity order = pendingOrder(UUID.randomUUID(), planId, key, creditsAdded);
+        order.setStatus(PaymentStatus.PAID);
+        order.setPaidAt(Instant.parse("2026-08-22T02:10:00Z"));
+        return order;
+    }
+
+    private PaymentOrderEntity pendingOrder(
+            UUID orderId,
+            String planId,
+            String key,
+            int creditsAdded
+    ) {
         PaymentOrderEntity order = new PaymentOrderEntity();
-        order.setId(UUID.randomUUID());
+        order.setId(orderId);
         order.setUserId(USER_ID);
         order.setPlanId(planId);
         order.setIdempotencyKey(key);
+        order.setPlanName(planId);
         order.setCreditsAdded(creditsAdded);
-        order.setStatus(PaymentStatus.PAID);
-        order.setPaidAt(Instant.parse("2026-08-22T02:10:00Z"));
+        order.setAmountFen(800);
+        order.setCurrency("CNY");
+        order.setStatus(PaymentStatus.PENDING);
+        order.setCreatedAt(Instant.parse("2026-08-22T02:00:00Z"));
         return order;
     }
 }

@@ -43,6 +43,20 @@ public class PaymentExceptionHandler {
                 .body(ErrorVO.of("CURRENT_USER_UNAVAILABLE", exception.getMessage()));
     }
 
+    @ExceptionHandler(PaymentMessagingException.class)
+    public ResponseEntity<ErrorVO> handleMessaging(PaymentMessagingException exception) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ErrorVO.of("PAYMENT_MESSAGING_UNAVAILABLE", exception.getMessage()));
+    }
+
+    @ExceptionHandler(PaymentLockUnavailableException.class)
+    public ResponseEntity<ErrorVO> handleLockUnavailable(
+            PaymentLockUnavailableException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(ErrorVO.of("PAYMENT_LOCK_UNAVAILABLE", exception.getMessage()));
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorVO> handleValidation(MethodArgumentNotValidException exception) {
         Map<String, String> fieldErrors = new LinkedHashMap<>();

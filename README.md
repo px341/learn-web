@@ -49,7 +49,7 @@ PAYMENT_MOCK_ENABLED=true mvn -f backend/pom.xml -pl payment-service spring-boot
 
 需要调试受 JWT 保护的接口时，先调用登录接口取得 token，再点击 Swagger UI 右上角的 **Authorize**，填入 token 本身即可。生产环境可设置 `SWAGGER_ENABLED=false` 关闭页面和文档端点。
 
-Gateway 本地默认连接 `localhost:8848` 的 Nacos 和 `localhost:6379` 的 Redis。Auth Service 本地默认使用 `postgres/postgres` 连接 `localhost:5432` 的 `learn` 数据库，可通过 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USERNAME` 和 `DB_PASSWORD` 覆盖。非本地环境还需注入至少 32 字节的 `JWT_SECRET`；Auth Service 签发 JWT 时必须使用与 Gateway 相同的 `JWT_SECRET`。
+Gateway 和开启了模拟支付的 Payment Service 本地默认连接 `localhost:6379` 的 Redis；Payment Service 使用 Redis 分布式锁收敛跨实例并发，PostgreSQL 的唯一约束、行锁和事务仍是支付正确性的最终保障。Gateway 本地默认连接 `localhost:8848` 的 Nacos。Auth Service 本地默认使用 `postgres/postgres` 连接 `localhost:5432` 的 `learn` 数据库，可通过 `DB_HOST`、`DB_PORT`、`DB_NAME`、`DB_USERNAME` 和 `DB_PASSWORD` 覆盖。非本地环境还需注入至少 32 字节的 `JWT_SECRET`；Auth Service 签发 JWT 时必须使用与 Gateway 相同的 `JWT_SECRET`。
 
 ## 本地对象存储
 

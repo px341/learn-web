@@ -12,6 +12,25 @@ spring:
     nacos:
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:localhost:8848}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:admin}
+    password: ${RABBITMQ_PASSWORD:admin}
+    publisher-confirm-type: correlated
+    listener:
+      simple:
+        default-requeue-rejected: false
+        retry:
+          enabled: true
+          initial-interval: 1s
+          multiplier: 2
+          max-interval: 10s
+          max-attempts: 5
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
 mybatis:
   mapper-locations: classpath:/mapper/*.xml
   type-handlers-package: com.learn.paymentservice.mybatis
@@ -24,6 +43,14 @@ payment:
   mock:
     # 默认关闭；仅在本地或演示环境显式设置 PAYMENT_MOCK_ENABLED=true。
     enabled: ${PAYMENT_MOCK_ENABLED:false}
+    exchange: ${PAYMENT_MOCK_EXCHANGE:payment.mock.exchange}
+    queue: ${PAYMENT_MOCK_QUEUE:payment.mock.queue}
+    routing-key: ${PAYMENT_MOCK_ROUTING_KEY:payment.mock.completed}
+    listener-concurrency: ${PAYMENT_MOCK_LISTENER_CONCURRENCY:1}
+    lock:
+      wait-time: ${PAYMENT_MOCK_LOCK_WAIT_TIME:3s}
+      lease-time: ${PAYMENT_MOCK_LOCK_LEASE_TIME:30s}
+      retry-interval: ${PAYMENT_MOCK_LOCK_RETRY_INTERVAL:50ms}
 
 springdoc:
   api-docs:

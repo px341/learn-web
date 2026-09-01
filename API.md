@@ -18,7 +18,7 @@
 | 错题上传     | 使用 Mock，图片以 Base64 保存                     | 已实现 `POST /api/mistakes`、额度事务、Garage 上传和 Outbox         | 前端接入                              |
 | 分析进度     | 前端定时器模拟状态变化                            | Outbox 发布已实现，异步分析 Worker 尚未实现                         | 实现 Worker 和前端轮询                |
 | 标记已掌握   | 按钮尚未发送请求                                  | 已实现 `PATCH /api/mistakes/{id}/mastery`                          | 前端接入 mastery 接口                 |
-| 额度、支付   | 前端仍直接修改本地额度                            | 已实现套餐查询、幂等模拟支付及事务入账                              | 前端接入；正式支付接入支付平台        |
+| 额度、支付   | 前端仍直接修改本地额度                            | 已实现套餐查询、幂等模拟订单及 RabbitMQ 异步入账                    | 前端接入；正式支付接入支付平台        |
 
 Gateway 已配置 `/api/auth/**`、`/api/dashboard/**`、`/api/mistakes/**` 和 `/api/payments/**` 路由，并聚合 Auth Service、Mistake Service 与 Payment Service 的 OpenAPI 文档。
 
@@ -229,7 +229,7 @@ backend/
 - 邮箱已被其他账号使用时返回 `409 EMAIL_ALREADY_REGISTERED`。
 - 成功响应为更新后的 `ApiResponse<UserVO>`。
 
-当前阶段不再单独设计 `/api/entitlements`：`GET /api/auth/me` 已返回 `credits`，创建错题和支付响应还会返回最新的 `creditsRemaining`。额度以服务端为唯一事实来源，前端不得自行计算最终额度。
+当前阶段不再单独设计 `/api/entitlements`：`GET /api/auth/me` 已返回 `credits`，创建错题响应会返回最新的 `creditsRemaining`；支付采用异步入账，前端应在订单完成后调用 `GET /api/auth/me` 刷新额度。额度以服务端为唯一事实来源，前端不得自行计算最终额度。
 
 ### `PUT /api/auth/me/avatar`
 
@@ -484,7 +484,7 @@ Object Key、原始文件名、内容类型、大小和 SHA-256 写入数据库�
 
 ## 支付与额度演示
 
-实现状态：数据库、Payment Service API 和 Gateway 路由已实现；前端接入与正式支付平台尚未实现。模拟支付接口默认关闭，本地或演示环境需显式设置 `PAYMENT_MOCK_ENABLED=true`。
+实现状态：数据库、Payment Service API 和 Gateway 路由已实现；模拟支付通过 RabbitMQ 异步入账，消费者使用注解声明 Exchange、Queue 与绑定关系。创建订单按用户、异步入账按订单使用 Redis 分布式锁收敛跨实例并发，PostgreSQL 唯一约束、行锁和事务继续提供最终正确性保障。前端接入与正式支付平台尚未实现。模拟支付接口默认关闭，本地或演示环境需显式设置 `PAYMENT_MOCK_ENABLED=true`。
 
 ### `GET /api/payments/plans`
 
@@ -529,19 +529,26 @@ Object Key、原始文件名、内容类型、大小和 SHA-256 写入数据库�
 
 套餐次数和金额由后端根据 `planId` 查询，客户端不得提交可信的 `count` 或金额。请求携带唯一的 `Idempotency-Key`，相同 Key 重试不得重复增加额度。
 
+接口创建 `pending` 订单后将订单 ID 投递到 RabbitMQ，返回 HTTP `202 Accepted`。该响应只表示订单已受理，不表示额度已经到账。
+
 响应：
 
 ```json
 {
   "data": {
     "orderId": "8b6d52bf-95f7-4226-bb1f-2063f4e70a1b",
-    "status": "paid",
-    "creditsAdded": 10,
-    "creditsRemaining": 13,
-    "paidAt": "2026-08-22T10:10:00+08:00"
+    "status": "pending",
+    "planId": "starter",
+    "planName": "进阶学习包",
+    "credits": 10,
+    "amountFen": 800,
+    "currency": "CNY",
+    "createdAt": "2026-08-22T10:10:00+08:00"
   }
 }
 ```
+
+RabbitMQ 消息体只包含 `orderId`，可信金额和额度由消费者重新读取订单快照。消费者锁定订单并仅处理 `PENDING` 状态，因此重复投递不会重复增加额度；处理完成后订单更新为 `PAID`。
 
 正式支付必须由 Java 服务端验证支付平台回调签名并更新额度，不能根据前端跳转到“支付成功”页判断到账。
 
@@ -556,7 +563,7 @@ Object Key、原始文件名、内容类型、大小和 SHA-256 写入数据库�
 7. `failed` 状态当前会被错误显示为“排队中”，接入真实状态前需要补充失败样式和重试提示。
 8. 个人资料保存按钮目前无请求，需要接入 `PATCH /api/auth/me`。
 9. 支付页套餐和额度增加目前完全在浏览器内完成，需要改为服务端接口。
-10. 前端目前保存的是登录瞬间的用户额度，创建错题或支付后应使用接口返回的 `creditsRemaining` 更新，并在应用初始化时调用 `GET /api/auth/me` 校准。
+10. 前端目前保存的是登录瞬间的用户额度：创建错题后使用 `creditsRemaining` 更新；异步支付完成后重新调用 `GET /api/auth/me`，并在应用初始化时用该接口校准。
 
 ## 推荐服务拆分
 
