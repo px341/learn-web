@@ -8,7 +8,7 @@ npm install
 npm run dev
 ```
 
-API 对接契约和逐项实现状态见 [API.md](./API.md)。前端认证与头像已接入真实 API；错题、Dashboard 和支付页面仍主要使用 `frontend/src/mock.ts`，异步分析 Worker 与正式支付平台尚未实现。
+API 对接契约和逐项实现状态见 [API.md](./API.md)。前端已接入认证、资料、Dashboard、错题和本地模拟支付 API；Mistake Service 使用 RabbitMQ Worker 调用 OpenAI Responses API 完成结构化分析。
 
 ## 本地端口
 
@@ -37,7 +37,10 @@ mvn -f backend/pom.xml -pl auth-service spring-boot:run
 # 3. 启动 Gateway
 mvn -f backend/pom.xml -pl gateway spring-boot:run
 
-# 4. 启动 Payment Service；模拟支付仅在本地显式开启
+# 4. 启动 Mistake Service；OPENAI_API_KEY 只从环境变量注入
+OPENAI_API_KEY=your-key mvn -f backend/pom.xml -pl mistake-service spring-boot:run
+
+# 5. 启动 Payment Service；模拟支付仅在本地显式开启
 PAYMENT_MOCK_ENABLED=true mvn -f backend/pom.xml -pl payment-service spring-boot:run
 ```
 
@@ -93,3 +96,9 @@ docker compose exec -T postgres psql -U postgres -d learn < sql_table/003_add_mi
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/004_create_mistake_outbox.sql
 docker compose exec -T postgres psql -U postgres -d learn < sql_table/005_create_payments.sql
 ```
+
+## AI 分析配置
+
+`OPENAI_API_KEY` 必须通过环境变量或 Secret 注入。可选配置包括 `OPENAI_MODEL`（默认 `gpt-5.4`）、`OPENAI_BASE_URL`、`OPENAI_CONNECT_TIMEOUT`、`OPENAI_READ_TIMEOUT` 和 `OPENAI_MAX_OUTPUT_TOKENS`。请求使用 Responses API 的图片输入与严格 JSON Schema 输出；响应原文不会写入数据库。
+
+本仓库提供可完整运行的本地模拟支付流程。接入微信支付、支付宝等正式渠道前，必须先选定渠道并按其服务端回调签名协议实现，不能复用模拟支付入口作为生产支付。
