@@ -127,6 +127,34 @@ export const auth = {
     if (!user?.id) throw new Error("服务器返回的用户数据不完整");
     return saveUser(user);
   },
+  updateProfile: async (name: string, email: string): Promise<User> => {
+    if (!session?.token) throw new Error("当前未登录");
+
+    const response = await fetch(`${apiUrl}/auth/me`, {
+      method: "PATCH",
+      headers: {
+        Authorization: `Bearer ${session.token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ name, email }),
+    });
+    const payload = (await response.json().catch(() => null)) as
+      | ApiResponse<User>
+      | ApiError
+      | null;
+    if (!response.ok) {
+      if (response.status === 401) clearSession();
+      const error = payload as ApiError | null;
+      const fieldMessage = error?.fieldErrors
+        ? Object.values(error.fieldErrors)[0]
+        : undefined;
+      throw new Error(fieldMessage || error?.message || "保存资料失败");
+    }
+
+    const user = (payload as ApiResponse<User> | null)?.data;
+    if (!user?.id) throw new Error("服务器返回的用户数据不完整");
+    return saveUser(user);
+  },
   logout: clearSession,
   updateCredits: (credits: number) => {
     if (!session) return;
