@@ -4,7 +4,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.List;
 
-/** 分析成功后返回给前端的结构化结果。 */
+/**
+ * 分析成功后的结构化结果。
+ *
+ * <p>该对象既作为后续分析客户端与业务层之间的结果契约，也作为错题详情接口
+ * 返回给前端的只读视图，不包含模型原始响应。</p>
+ */
 public record MistakeAnalysisVO(
         String summary,
         List<String> knowledge,

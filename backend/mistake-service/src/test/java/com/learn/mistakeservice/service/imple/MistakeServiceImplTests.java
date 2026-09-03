@@ -1,9 +1,12 @@
 package com.learn.mistakeservice.service.imple;
 
+import com.learn.common.vo.PageVO;
 import com.learn.mistakeservice.dto.CreateMistakeDTO;
+import com.learn.mistakeservice.dto.MistakeListQueryDTO;
 import com.learn.mistakeservice.dto.UpdateMasteryDTO;
 import com.learn.mistakeservice.entity.PersonalQuestionEntity;
 import com.learn.mistakeservice.exception.InsufficientCreditsException;
+import com.learn.mistakeservice.exception.AnalysisNotCompletedException;
 import com.learn.mistakeservice.exception.MistakeContentRequiredException;
 import com.learn.mistakeservice.exception.MistakeNotFoundException;
 import com.learn.mistakeservice.exception.MistakeUserUnavailableException;
@@ -39,6 +42,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.never;
@@ -80,6 +84,36 @@ class MistakeServiceImplTests {
     void clearTransactionSynchronization() {
         if (TransactionSynchronizationManager.isSynchronizationActive()) {
             TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    @Nested
+    class ListMistakes {
+
+        @Test
+        void appliesCurrentUserFiltersPaginationAndAscendingSort() {
+            MistakeListQueryDTO query = new MistakeListQueryDTO();
+            query.setKeyword(" 函数 ");
+            query.setSubject(" 数学 ");
+            query.setStatus(AnalysisStatus.COMPLETED);
+            query.setMastered(false);
+            query.setPage(1);
+            query.setSize(20);
+            query.setSort("createdAt,asc");
+            PersonalQuestionEntity mistake = completedMistake();
+            when(mistakeMapper.selectActiveByUserId(
+                    USER_ID, "函数", "数学", "COMPLETED", false, 20, 20, true
+            )).thenReturn(List.of(mistake));
+            when(mistakeMapper.countActiveByUserId(
+                    USER_ID, "函数", "数学", "COMPLETED", false
+            )).thenReturn(21L);
+
+            PageVO<MistakeSummaryVO> result = service.listMistakes(query);
+
+            assertThat(result.getItems()).hasSize(1);
+            assertThat(result.getPage()).isEqualTo(1);
+            assertThat(result.getTotalElements()).isEqualTo(21);
+            assertThat(result.getTotalPages()).isEqualTo(2);
         }
     }
 
@@ -323,7 +357,7 @@ class MistakeServiceImplTests {
             )).isInstanceOf(MistakeNotFoundException.class);
 
             verify(mistakeMapper).selectActiveByIdAndUserId(MISTAKE_ID, USER_ID);
-            verify(mistakeMapper, never()).updateMasteredByIdAndUserId(any(), any());
+            verify(mistakeMapper, never()).updateMasteredByIdAndUserId(any(), any(), anyBoolean());
         }
 
         @ParameterizedTest
@@ -331,9 +365,10 @@ class MistakeServiceImplTests {
         void togglesMasteryWhenRequestedValueChanged(boolean current, boolean requested) {
             PersonalQuestionEntity mistake = baseMistake();
             mistake.setMastered(current);
+            mistake.setAnalysisStatus(AnalysisStatus.COMPLETED);
             when(mistakeMapper.selectActiveByIdAndUserId(MISTAKE_ID, USER_ID))
                     .thenReturn(mistake);
-            when(mistakeMapper.updateMasteredByIdAndUserId(MISTAKE_ID, USER_ID))
+            when(mistakeMapper.updateMasteredByIdAndUserId(MISTAKE_ID, USER_ID, requested))
                     .thenReturn(1);
 
             MistakeSummaryVO result = service.updateMastery(
@@ -342,13 +377,14 @@ class MistakeServiceImplTests {
             );
 
             assertThat(result.mastered()).isEqualTo(requested);
-            verify(mistakeMapper).updateMasteredByIdAndUserId(MISTAKE_ID, USER_ID);
+            verify(mistakeMapper).updateMasteredByIdAndUserId(MISTAKE_ID, USER_ID, requested);
         }
 
         @Test
         void skipsWriteWhenMasteryAlreadyMatches() {
             PersonalQuestionEntity mistake = baseMistake();
             mistake.setMastered(true);
+            mistake.setAnalysisStatus(AnalysisStatus.COMPLETED);
             when(mistakeMapper.selectActiveByIdAndUserId(MISTAKE_ID, USER_ID))
                     .thenReturn(mistake);
 
@@ -358,21 +394,37 @@ class MistakeServiceImplTests {
             );
 
             assertThat(result.mastered()).isTrue();
-            verify(mistakeMapper, never()).updateMasteredByIdAndUserId(any(), any());
+            verify(mistakeMapper, never()).updateMasteredByIdAndUserId(any(), any(), anyBoolean());
         }
 
         @Test
         void reportsNotFoundWhenConcurrentUpdateAffectsNoRows() {
             PersonalQuestionEntity mistake = baseMistake();
+            mistake.setAnalysisStatus(AnalysisStatus.COMPLETED);
             when(mistakeMapper.selectActiveByIdAndUserId(MISTAKE_ID, USER_ID))
                     .thenReturn(mistake);
-            when(mistakeMapper.updateMasteredByIdAndUserId(MISTAKE_ID, USER_ID))
+            when(mistakeMapper.updateMasteredByIdAndUserId(MISTAKE_ID, USER_ID, true))
                     .thenReturn(0);
 
             assertThatThrownBy(() -> service.updateMastery(
                     MISTAKE_ID,
                     new UpdateMasteryDTO(true)
             )).isInstanceOf(MistakeNotFoundException.class);
+        }
+
+        @Test
+        void rejectsMasteryUpdateBeforeAnalysisCompletes() {
+            PersonalQuestionEntity mistake = baseMistake();
+            when(mistakeMapper.selectActiveByIdAndUserId(MISTAKE_ID, USER_ID))
+                    .thenReturn(mistake);
+
+            assertThatThrownBy(() -> service.updateMastery(
+                    MISTAKE_ID,
+                    new UpdateMasteryDTO(true)
+            )).isInstanceOf(AnalysisNotCompletedException.class);
+
+            verify(mistakeMapper, never())
+                    .updateMasteredByIdAndUserId(any(), any(), anyBoolean());
         }
     }
 

@@ -1,7 +1,9 @@
 package com.learn.mistakeservice.controller;
 
 import com.learn.common.vo.ApiResponse;
+import com.learn.common.vo.PageVO;
 import com.learn.mistakeservice.dto.CreateMistakeDTO;
+import com.learn.mistakeservice.dto.MistakeListQueryDTO;
 import com.learn.mistakeservice.dto.UpdateMasteryDTO;
 import com.learn.mistakeservice.service.MistakeService;
 import com.learn.mistakeservice.vo.CreateMistakeVO;
@@ -31,6 +33,14 @@ public class MistakeController {
 
     private final MistakeService mistakeService;
 
+    @GetMapping
+    @Operation(summary = "分页查询当前用户的错题")
+    public ApiResponse<PageVO<MistakeSummaryVO>> listMistakes(
+            @Valid @ModelAttribute MistakeListQueryDTO query
+    ) {
+        return ApiResponse.success(mistakeService.listMistakes(query));
+    }
+
     @GetMapping("/{id}")
     @Operation(summary = "查询错题详情")
     public ApiResponse<MistakeDetailVO> getMistake(@PathVariable UUID id) {
@@ -51,7 +61,7 @@ public class MistakeController {
     @Operation(summary = "标记或取消标记“已掌握”")
     public ApiResponse<MistakeSummaryVO> updateMastery(
             @PathVariable UUID id,
-            @Valid UpdateMasteryDTO updateMasteryDTO) {
+            @Valid @RequestBody UpdateMasteryDTO updateMasteryDTO) {
         MistakeSummaryVO mistakeSummaryVO = mistakeService.updateMastery(id, updateMasteryDTO);
         return ApiResponse.success(mistakeSummaryVO);
     }

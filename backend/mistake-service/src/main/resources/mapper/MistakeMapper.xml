@@ -73,6 +73,83 @@
           AND status = 'ACTIVE'
     </select>
 
+    <sql id="ActiveMistakeFilters">
+        user_id = #{userId}
+        AND status = 'ACTIVE'
+        <if test="keyword != null">
+            AND (
+                title ILIKE CONCAT('%', #{keyword}, '%')
+                OR subject ILIKE CONCAT('%', #{keyword}, '%')
+                OR COALESCE(chapter, '') ILIKE CONCAT('%', #{keyword}, '%')
+                OR COALESCE(analysis_knowledge::text, '') ILIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <if test="subject != null">
+            AND subject = #{subject}
+        </if>
+        <if test="analysisStatus != null">
+            AND analysis_status = #{analysisStatus}
+        </if>
+        <if test="mastered != null">
+            AND mastered = #{mastered}
+        </if>
+    </sql>
+
+    <select id="selectActiveByUserId" resultMap="PersonalQuestionResultMap">
+        SELECT
+            id, user_id, title, subject, chapter, question_type, status,
+            analysis_status, mastered, created_at, updated_at
+        FROM personal_questions
+        WHERE <include refid="ActiveMistakeFilters"/>
+        ORDER BY created_at
+        <choose>
+            <when test="ascending">ASC</when>
+            <otherwise>DESC</otherwise>
+        </choose>
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countActiveByUserId" resultType="long">
+        SELECT COUNT(*)
+        FROM personal_questions
+        WHERE <include refid="ActiveMistakeFilters"/>
+    </select>
+
+    <!-- Worker 已成功领取任务后，读取调用分析模型所需的可信题目内容。 -->
+    <select id="selectByIdForAnalysis" resultMap="PersonalQuestionResultMap">
+        SELECT
+            id,
+            user_id,
+            matched_official_question_id,
+            title,
+            subject,
+            chapter,
+            question_type,
+            stem_text,
+            user_answer,
+            image_object_key,
+            image_original_name,
+            image_content_type,
+            image_size,
+            image_sha256,
+            status,
+            analysis_status,
+            mastered,
+            analysis_summary,
+            analysis_knowledge,
+            analysis_steps,
+            analysis_suggestion,
+            analysis_answer,
+            analysis_confidence,
+            failure_message,
+            version,
+            created_at,
+            updated_at
+        FROM personal_questions
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+    </select>
+
     <insert id="insert" parameterType="com.learn.mistakeservice.entity.PersonalQuestionEntity">
         INSERT INTO personal_questions (
             id,
@@ -136,11 +213,112 @@
 
     <update id="updateMasteredByIdAndUserId">
         UPDATE personal_questions
-        SET mastered = !mastered,
+        SET mastered = #{mastered},
             updated_at = CURRENT_TIMESTAMP
         WHERE id = #{id}
             AND user_id = #{userId}
             AND status = 'ACTIVE'
+            AND analysis_status = 'COMPLETED'
+    </update>
+
+    <!-- 只有一个消费者能把 QUEUED 原子切换为 ANALYZING；返回 0 表示重复或过期消息。 -->
+    <update id="claimAnalysis">
+        UPDATE personal_questions
+        SET analysis_status = 'ANALYZING',
+            failure_message = NULL,
+            version = version + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+          AND analysis_status = 'QUEUED'
+    </update>
+
+    <!-- expectedVersion 防止已经被其他尝试接管的任务被旧结果覆盖。 -->
+    <update id="markAnalysisCompleted">
+        UPDATE personal_questions
+        SET analysis_status = 'COMPLETED',
+            analysis_summary = #{analysis.summary},
+            analysis_knowledge = #{analysis.knowledge,
+                jdbcType=OTHER,
+                typeHandler=com.learn.mistakeservice.mybatis.StringListJsonTypeHandler},
+            analysis_steps = #{analysis.steps,
+                jdbcType=OTHER,
+                typeHandler=com.learn.mistakeservice.mybatis.StringListJsonTypeHandler},
+            analysis_suggestion = #{analysis.suggestion},
+            analysis_answer = #{analysis.answer},
+            analysis_confidence = #{analysis.confidence},
+            failure_message = NULL,
+            version = version + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+          AND analysis_status = 'ANALYZING'
+          AND version = #{expectedVersion}
+    </update>
+
+    <update id="markAnalysisFailed">
+        UPDATE personal_questions
+        SET analysis_status = 'FAILED',
+            analysis_summary = NULL,
+            analysis_knowledge = NULL,
+            analysis_steps = NULL,
+            analysis_suggestion = NULL,
+            analysis_answer = NULL,
+            analysis_confidence = NULL,
+            failure_message = #{failureMessage},
+            version = version + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+          AND analysis_status = 'ANALYZING'
+          AND version = #{expectedVersion}
+    </update>
+
+    <update id="releaseAnalysisForRetry">
+        UPDATE personal_questions
+        SET analysis_status = 'QUEUED',
+            failure_message = NULL,
+            version = version + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+          AND analysis_status = 'ANALYZING'
+          AND version = #{expectedVersion}
+    </update>
+
+    <select id="selectExpiredAnalysesForUpdate" resultMap="PersonalQuestionResultMap">
+        SELECT id, version
+        FROM personal_questions
+        WHERE status = 'ACTIVE'
+          AND analysis_status = 'ANALYZING'
+          AND updated_at &lt; #{expiredBefore}
+        ORDER BY updated_at
+        LIMIT #{limit}
+        FOR UPDATE SKIP LOCKED
+    </select>
+
+    <!-- Worker 崩溃时不会执行异常处理，使用领取时的版本号防止恢复新任务。 -->
+    <update id="recoverExpiredAnalysis">
+        UPDATE personal_questions
+        SET analysis_status = 'QUEUED',
+            failure_message = NULL,
+            version = version + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+          AND analysis_status = 'ANALYZING'
+          AND version = #{expectedVersion}
+    </update>
+
+    <update id="markQueuedAnalysisFailed">
+        UPDATE personal_questions
+        SET analysis_status = 'FAILED',
+            failure_message = #{failureMessage},
+            version = version + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND status = 'ACTIVE'
+          AND analysis_status = 'QUEUED'
     </update>
 
 </mapper>

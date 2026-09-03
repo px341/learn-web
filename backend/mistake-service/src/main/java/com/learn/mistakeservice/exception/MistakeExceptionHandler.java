@@ -22,6 +22,14 @@ public class MistakeExceptionHandler {
                 .body(ErrorVO.of("MISTAKE_NOT_FOUND", exception.getMessage()));
     }
 
+    @ExceptionHandler(AnalysisNotCompletedException.class)
+    public ResponseEntity<ErrorVO> handleAnalysisNotCompleted(
+            AnalysisNotCompletedException exception
+    ) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(ErrorVO.of("ANALYSIS_NOT_COMPLETED", exception.getMessage()));
+    }
+
     @ExceptionHandler(MistakeStorageException.class)
     public ResponseEntity<ErrorVO> handleStorage(MistakeStorageException exception) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)

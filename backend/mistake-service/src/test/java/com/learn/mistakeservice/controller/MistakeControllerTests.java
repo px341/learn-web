@@ -1,6 +1,8 @@
 package com.learn.mistakeservice.controller;
 
+import com.learn.common.vo.PageVO;
 import com.learn.mistakeservice.dto.CreateMistakeDTO;
+import com.learn.mistakeservice.dto.MistakeListQueryDTO;
 import com.learn.mistakeservice.dto.UpdateMasteryDTO;
 import com.learn.mistakeservice.exception.MistakeExceptionHandler;
 import com.learn.mistakeservice.model.AnalysisStatus;
@@ -15,6 +17,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
@@ -27,6 +30,11 @@ class MistakeControllerTests {
     void bindsFlatMultipartFieldsAndReturnsAccepted() throws Exception {
         UUID mistakeId = UUID.randomUUID();
         MistakeService mistakeService = new MistakeService() {
+            @Override
+            public PageVO<MistakeSummaryVO> listMistakes(MistakeListQueryDTO query) {
+                return new PageVO<>(List.of(), query.getPage(), query.getSize(), 0, 0);
+            }
+
             @Override
             public MistakeDetailVO getMistake(UUID id) {
                 return null;

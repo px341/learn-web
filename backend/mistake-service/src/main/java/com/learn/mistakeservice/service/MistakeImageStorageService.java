@@ -9,4 +9,6 @@ public interface MistakeImageStorageService {
     void delete(String objectKey);
 
     PresignedImage createReadUrl(String objectKey);
+
+    byte[] get(String objectKey);
 }

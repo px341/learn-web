@@ -22,6 +22,10 @@ spring:
     username: ${RABBITMQ_USERNAME:admin}
     password: ${RABBITMQ_PASSWORD:admin}
     publisher-confirm-type: correlated
+    listener:
+      simple:
+        # 重试耗尽后拒绝原消息，由死信消费者把任务记录为 FAILED。
+        default-requeue-rejected: false
 
 mybatis:
   mapper-locations: classpath:/mapper/*.xml
@@ -49,6 +53,24 @@ messaging:
   outbox:
     fixed-delay: ${OUTBOX_FIXED_DELAY:2s}
     initial-delay: ${OUTBOX_INITIAL_DELAY:30s}
+
+analysis:
+  lease-timeout: ${ANALYSIS_LEASE_TIMEOUT:10m}
+  retry:
+    initial-interval: ${ANALYSIS_RETRY_INITIAL_INTERVAL:2s}
+    multiplier: ${ANALYSIS_RETRY_MULTIPLIER:2}
+    max-interval: ${ANALYSIS_RETRY_MAX_INTERVAL:10s}
+    max-attempts: ${ANALYSIS_RETRY_MAX_ATTEMPTS:3}
+  openai:
+    base-url: ${OPENAI_BASE_URL:https://api.openai.com/v1}
+    api-key: ${OPENAI_API_KEY:}
+    model: ${OPENAI_MODEL:gpt-5.4}
+    connect-timeout: ${OPENAI_CONNECT_TIMEOUT:10s}
+    read-timeout: ${OPENAI_READ_TIMEOUT:60s}
+    max-output-tokens: ${OPENAI_MAX_OUTPUT_TOKENS:1200}
+  recovery:
+    fixed-delay: ${ANALYSIS_RECOVERY_FIXED_DELAY:1m}
+    initial-delay: ${ANALYSIS_RECOVERY_INITIAL_DELAY:1m}
 
 springdoc:
   api-docs:

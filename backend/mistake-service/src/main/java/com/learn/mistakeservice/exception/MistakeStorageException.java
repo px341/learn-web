@@ -5,4 +5,8 @@ public class MistakeStorageException extends RuntimeException {
     public MistakeStorageException(String message, Throwable cause) {
         super(message, cause);
     }
+
+    public MistakeStorageException(String message) {
+        super(message);
+    }
 }

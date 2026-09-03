@@ -1,9 +1,12 @@
 package com.learn.mistakeservice.service.imple;
 
+import com.learn.common.vo.PageVO;
 import com.learn.mistakeservice.dto.CreateMistakeDTO;
+import com.learn.mistakeservice.dto.MistakeListQueryDTO;
 import com.learn.mistakeservice.dto.UpdateMasteryDTO;
 import com.learn.mistakeservice.entity.PersonalQuestionEntity;
 import com.learn.mistakeservice.exception.InsufficientCreditsException;
+import com.learn.mistakeservice.exception.AnalysisNotCompletedException;
 import com.learn.mistakeservice.exception.MistakeContentRequiredException;
 import com.learn.mistakeservice.exception.MistakeNotFoundException;
 import com.learn.mistakeservice.exception.MistakeStorageException;
@@ -33,6 +36,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -54,6 +58,41 @@ public class MistakeServiceImpl implements MistakeService {
     private final MistakeImageValidator imageValidator;
     private final MistakeImageStorageService imageStorageService;
     private final Clock clock = Clock.systemUTC();
+
+    @Override
+    public PageVO<MistakeSummaryVO> listMistakes(MistakeListQueryDTO query) {
+        UUID userId = currentUserProvider.getUserId();
+        String keyword = normalizeNullable(query.getKeyword());
+        String subject = normalizeNullable(query.getSubject());
+        String analysisStatus = query.getStatus() == null
+                ? null
+                : query.getStatus().name();
+        boolean ascending = query.getSort().toLowerCase().endsWith(",asc");
+        long requestedOffset = (long) query.getPage() * query.getSize();
+        int offset = requestedOffset > Integer.MAX_VALUE
+                ? Integer.MAX_VALUE
+                : (int) requestedOffset;
+
+        List<MistakeSummaryVO> items = mistakeMapper.selectActiveByUserId(
+                        userId,
+                        keyword,
+                        subject,
+                        analysisStatus,
+                        query.getMastered(),
+                        offset,
+                        query.getSize(),
+                        ascending
+                ).stream()
+                .map(this::toSummary)
+                .toList();
+        long total = mistakeMapper.countActiveByUserId(
+                userId, keyword, subject, analysisStatus, query.getMastered()
+        );
+        int totalPages = total == 0
+                ? 0
+                : (int) Math.ceil((double) total / query.getSize());
+        return new PageVO<>(items, query.getPage(), query.getSize(), total, totalPages);
+    }
 
     /**
      * 查询当前用户的错题详情。
@@ -124,8 +163,13 @@ public class MistakeServiceImpl implements MistakeService {
         if (mistake == null) {
             throw new MistakeNotFoundException();
         }
+        if (mistake.getAnalysisStatus() != AnalysisStatus.COMPLETED) {
+            throw new AnalysisNotCompletedException();
+        }
         if (mistake.isMastered() != updateMasteryDTO.mastered()) {
-            int ret = mistakeMapper.updateMasteredByIdAndUserId(id, userId);
+            int ret = mistakeMapper.updateMasteredByIdAndUserId(
+                    id, userId, updateMasteryDTO.mastered()
+            );
             if (ret == 0) {
                 throw new MistakeNotFoundException();
             }

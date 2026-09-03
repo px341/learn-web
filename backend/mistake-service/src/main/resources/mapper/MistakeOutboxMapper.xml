@@ -69,7 +69,7 @@
         UPDATE mistake_outbox_events
         SET attempts = attempts + 1,
             next_attempt_at = CURRENT_TIMESTAMP
-                + make_interval(secs =&gt; LEAST(300, power(2, attempts + 1)::INTEGER)),
+                + make_interval(secs =&gt; LEAST(300, power(2, attempts + 1))::INTEGER),
             last_error = #{lastError}
         WHERE id = #{id}
           AND status = 'PENDING'
